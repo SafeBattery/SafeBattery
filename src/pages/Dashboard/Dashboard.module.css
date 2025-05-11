@@ -1,0 +1,138 @@
+/* 헤더 */
+.container {
+  padding: 24px 24px 0px 24px;
+  background-color: #f6f7f9;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+}
+.header {
+  font-size: 24px;
+  font-weight: 600;
+  color: #000;
+}
+.subtext {
+  font-size: 14px;
+  color: #a8afb6;
+}
+.body {
+  padding: 24px;
+  background-color: #f6f7f9;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  height: 2000px;
+}
+
+/* 카드 섹션 - 첫 번째 줄 */
+.cardSection.now {
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+}
+.cardSection.now .card{
+  flex: 1;
+  min-width: 220px;
+  background: #fff; 
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 3px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* time 카드 */
+.cardSection.now .timeContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: center;
+}
+.cardSection.now .timeDate {
+  font-size: 20px;
+  font-weight: 600;
+  color: #444;
+  letter-spacing: 0.5px;
+}
+.cardSection.now .timeTime {
+  font-size: 36px;
+  font-weight: 700;
+  color: #111;
+  letter-spacing: 1px;
+}
+/* power, u_totV, t_3 카드 */
+.powerValue, .voltageValue, .thermoValue {
+  font-size: 40px;
+  font-weight: 600;
+  color: #000;
+}
+.card span.material-icons {
+  font-size: 60px !important;
+  margin-right: 12px;
+  color: #555;
+}
+
+.cardSection.history {
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+}
+.cardSection.history .card {
+  flex: 1;
+  min-width: 200px; 
+  height: 400px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 3px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.chartContainer {
+  width: 100%;
+  height: 100%;
+  padding: 12px;
+}
+.chartHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 20px;
+}
+.chartTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+.selectDropdown {
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  color: #333;
+  cursor: pointer;
+  outline: none;
+}
+.selectDropdown:hover {
+  border-color: #888;
+}
+.excelDownloadButton {
+  padding: 8px 16px;
+  border-radius: 40px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  background-color: #4f7bf6;
+  color: #fff;
+}

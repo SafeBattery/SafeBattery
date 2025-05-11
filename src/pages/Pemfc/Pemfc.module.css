@@ -1,0 +1,431 @@
+/* 공통 */
+.buttonBase {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 10px 18px;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  text-decoration: none;
+}
+
+/* 헤더 */
+.container {
+  padding: 24px 24px 0px 24px;
+  background-color: #f6f7f9;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+}
+.header {
+  font-size: 24px;
+  font-weight: 600;
+  color: #000;
+}
+.subtext {
+  font-size: 14px;
+  color: #a8afb6;
+}
+.actions {
+  height: 40px;
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  gap: 12px;
+}
+.primaryButton {
+  composes: buttonBase;
+  background-color: #4f7bf6;
+  color: #fff;
+  margin-right: 5px;
+}
+
+/* Main UI */
+.body {
+  padding: 24px;
+  background-color: #f6f7f9;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Main UI 첫 번쨰 줄 - cards */
+.cardSection {
+  background: #fff;
+  border-radius: 25px;
+  box-shadow: 3px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-wrap: wrap;
+  padding: 20px;
+  justify-content: space-between;
+}
+.card {
+  width: calc((100% - 48px) / 3); /* 3개 카드, gap 24px * 2 */
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: #111;
+}
+
+/* Main UI 첫 번쨰 줄 - 총 PEMFC 수 카드 */
+.cardContent {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; 
+  align-items: center;
+  gap: 12px;
+  height: 100%; 
+}
+.cardTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #444;
+  letter-spacing: 0.5px;
+}
+.cardValue {
+  font-size: 36px;
+  font-weight: 700;
+  color: #2d2d2d;
+}
+
+/* Main UI 첫 번쨰 줄 - 상태별 PEMFC 카드 */
+.card.status .cardTitle {
+  text-align: center;
+  margin-bottom: 12px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #444;
+  letter-spacing: 0.5px;
+}
+.statusBoxContainer {
+  display: flex;
+}
+.statusBox {
+  flex: 1;
+  padding: 16px;
+  border-radius: 6px;
+  text-align: center;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  justify-content: center; 
+  align-items: center;
+}
+.label {
+  font-size: 15px;
+  font-weight: 600;
+}
+.divider {
+  width: 100%;
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.4);
+  border: none;
+  margin: 6px 0;
+}
+.count {
+  font-size: 18px;
+  font-weight: 700;
+}
+.normal {
+  background-color: #14ca74;
+}
+.warning {
+  background-color: #f0ad4e;
+}
+.danger {
+  background-color: #d9534f;
+}
+
+/* 세 번째 카드 */
+
+
+
+
+/* Main UI 두 번째 줄 */
+.sectionMapList {
+  display: flex; 
+  gap: 24px; 
+  justify-content: space-between; 
+  flex-wrap: wrap; 
+}
+
+/* Main UI 두 번째 줄 - 지도 */
+.mapSection {
+  flex: 1 1 calc(50% - 12px); 
+  min-width: 300px;
+  height: 500px;
+}
+.mapContainer {
+  background-color: #fff;
+  border-radius: 25px;
+  padding: 20px;
+  color: white;
+  box-shadow: 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Main UI 두 번째 줄 - 리스트 */
+.listSection {
+  flex: 1 1 calc(50% - 12px); 
+  min-width: 300px; 
+  height: 500px;
+}
+.listContainer {
+  background-color: #fff;
+  border-radius: 25px;
+  padding: 20px;
+  box-shadow: 3px rgba(0, 0, 0, 0.2);
+  height: 400px;
+  color: #000; 
+}
+.listHeader {
+  display: flex;
+  align-items: center;
+  gap: 0px;
+  margin-bottom: 12px;
+}
+.listTitle {
+  font-family: "MonaSans-Medium", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #1e1e1e; 
+  text-align: left;
+  margin-right: 20px;
+}
+.refreshButton {
+  composes: buttonBase;
+  background-color: #4a4e51;
+  color: #fff;
+  margin-right: 5px;
+}
+.deleteButton {
+  composes: buttonBase;
+  background-color:  #f44336;;
+  color: #fff;
+}
+.refreshButton:hover, .deleteButton:hover {
+  opacity: 0.8;
+}
+.deviceTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 14px;
+  color: #000;
+}
+.deviceTable th,
+.deviceTable td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #2a3558;
+  position: relative;
+}
+.deviceTable th {
+  background-color: #1d2a56;
+  font-weight: 600;
+  color: #fff;
+}
+.deviceTable tr:hover {
+  background-color: #2a3b6f;
+  color: #fff;
+}
+.deviceStatus {
+  padding: 16px 32px;
+  font-weight: 500;
+  color: #fff;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+/* 특정 모달 삭제 */
+.deleteModalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5); 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.deleteModal {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 300px;
+  text-align: center;
+  box-shadow: 3px rgba(0, 0, 0, 0.2);
+}
+.deleteModalActions {
+  margin-top: 20px;
+}
+.deleteModalActions button {
+  padding: 8px 16px;
+  margin: 0 10px;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+.deleteModalActions button:first-child {
+  background-color: #f44336; 
+  color: white;
+}
+.deleteModalActions button:last-child {
+  background-color: #ccc; 
+  color: black;
+}
+.deleteModalActions button:hover {
+  opacity: 0.8;
+}
+
+/* PEMFC 등록 모달 */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px; 
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  animation: fadeIn 0.2s ease;
+  box-sizing: border-box; 
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.formRegistration {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin: 0 7px; 
+}
+.legend {
+  display: flex;
+  flex-direction: column;
+}
+.formTitle {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1e1e1e;
+}
+.inputField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.label {
+  font-size: 15px;
+  font-weight: 500;
+  color: #444;
+  margin-bottom: 8px; 
+}
+
+/* PEMFC 등록 모달 - PEMFC명, 고객명 */
+.input {
+  padding: 10px 14px;
+  font-size: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s ease;
+  width: 100%; 
+  box-sizing: border-box; 
+}
+.deviceName .input, .clientName .input {
+  max-width: 100%; 
+}
+.input:focus {
+  border-color: #4a90e2;
+}
+
+/* PEMFC 등록 모달 - 위치 */
+.exampleLocationText {
+  font-size: 12px;
+  font-weight: 400;
+  color: #888;
+}
+.locationInputs {
+  display: flex;
+  gap: 8px;
+}
+.deviceLocation .input {
+  flex: 1;
+}
+
+/* PEMFC 등록 모달 - 제조 날짜 */
+.dropdownMenu {
+  position: absolute;
+  top: 20px;
+  right: 0;
+  background-color: white;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  border-radius: 4px;
+  z-index: 10;
+  padding: 4px 0;
+}
+.dropdownMenu button {
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+.dropdownMenu button:hover {
+  background-color: #f0f0f0;
+}
+
+/* PEMFC 등록 모달 - button */
+.buttonGroup {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+.registerButton2 {
+  background-color: #4f7bf6;
+  color: #fff;
+  padding: 10px 16px;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+}
+.cancelButton {
+  background: transparent;
+  color: #666;
+  padding: 10px 16px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+.registerButton2:hover, .cancelButton:hover {
+  opacity: 0.8;
+}
+
