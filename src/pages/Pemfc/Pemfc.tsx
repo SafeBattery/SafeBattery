@@ -133,10 +133,10 @@ const Pemfc = () => {
     setMarkerRefs(newMarkers);
   }, [leafletMap, pemfcData]);
 
-  // PEMFC 등록
+  // PEMFC 등록 
   const handleRegister = async (formData: {
-    clientId: number;
     modelName: string;
+    clientId: number;
     lat: number;
     lng: number;
     manufacturedDate: string;
@@ -147,7 +147,6 @@ const Pemfc = () => {
         powerVoltageState: 'NORMAL',
         temperatureState: 'NORMAL',
       };
-
       await axios.post('http://localhost:8080/api/pemfc', payload);
       alert('PEMFC 등록 성공!');
       setIsRegistrationModalOpen(false);
@@ -157,10 +156,10 @@ const Pemfc = () => {
     }
   };
 
-  // 모든 PEMFC 데이터 재조회
+  // 모든 PEMFC 데이터 재조회 - O
   const handleReload = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/api/client/{clientId}/pemfc/all');
+      const response = await axios.get(`http://localhost:8080/api/client/1/pemfc/all`);
       const rawData = response.data;
 
       if (Array.isArray(rawData)) {
@@ -313,7 +312,7 @@ const Pemfc = () => {
                   <tr>
                     <th>장비명</th>
                     <th>상태</th>
-                    <th>측정시간</th>
+                    <th>제조 날짜</th>
                     <th>고객명</th>
                     <th>기타</th>
                   </tr>
@@ -348,7 +347,6 @@ const Pemfc = () => {
               </div>
             </div>
           )}
-        
         
         {isRegistrationModalOpen && (<RegistrationModal onClose={() => setIsRegistrationModalOpen(false)} onSubmit={handleRegister}/>)}
       </main>
