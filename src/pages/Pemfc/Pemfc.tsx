@@ -1,26 +1,25 @@
-import React, { useState, useEffect, useRef } from 'react';
-import styles from './Pemfc.module.css';
+import { useState, useEffect, useRef } from 'react';
 import { PemfcInstance } from './types/pemfc';
-import StatusCard from './components/StatusCard';
-import PemfcRow from './components/PemfcRow';
-import 'leaflet/dist/leaflet.css';
+import { StatusCard, PemfcRow, RegistrationModal } from './components';
+import axios from 'axios'
 import L from 'leaflet';
 import locationIcon from './assets/location_on.png';
+import styles from './Pemfc.module.css';
+import 'leaflet/dist/leaflet.css';
 
 const Pemfc = () => {
 
-  // PEMFC 등록 모달 관련
+  // PEMFC 모달 관련
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false); 
-  const [modelName, setModelName] = useState(''); 
-  const [clientName, setClientName] = useState(''); 
-  const [lat, setLat] = useState('');
-  const [lng, setLng] = useState('');
-  const [manufacturedDate, setManufacturedDate] = useState('');
+
+  // 개별 PEMFC 삭제 관련
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);  
 
   // PEMFC 개별 인스턴스 관리 관련
   const [pemfcData, setPemfcData] = useState<PemfcInstance[]>([]);
 
-  // PEMFC 상태 실시간 동적 렌더링 관련 (첫 번째 줄 - 총 PEMFC 수, 상태별 PEMFC 수, 빈 카드)
+  // PEMFC 상태 실시간 동적 렌더링 관련 (첫 번째 줄 - 총 PEMFC 수, 상태별 PEMFC 수, 빈 카드) - O
   const [totalPemfcCount, setTotalPemfcCount] = useState(0);
   const [normalCount, setNormalCount] = useState(0);
   const [warningCount, setWarningCount] = useState(0);
@@ -28,35 +27,60 @@ const Pemfc = () => {
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  // 지도 관련
+  const determineState = (
+    powerVoltageState: 'NORMAL' | 'WARNING' | 'DANGER',
+    temperatureState: 'NORMAL' | 'WARNING' | 'DANGER'
+  ): 'NORMAL' | 'WARNING' | 'DANGER' => {
+    if (powerVoltageState === 'DANGER' || temperatureState === 'DANGER') return 'DANGER';
+    if (powerVoltageState === 'WARNING' || temperatureState === 'WARNING') return 'WARNING';
+    return 'NORMAL';
+  };
+
+  // 지도 관련 - O
   const mapRef = useRef<HTMLDivElement>(null);
   const [leafletMap, setLeafletMap] = useState<L.Map | null>(null);
   const [markerRefs, setMarkerRefs] = useState<L.Marker[]>([]);
 
-  // 개별 PEMFC 삭제 관련
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);  
-
-  // 데이터 불러오기 (초기 마운트용)
+  // API 데이터 불러오기 (마운트 시 한 번 실행) - O
   useEffect(() => {
-    const data = localStorage.getItem('pemfcData');
-    if (data) {
+    const fetchPemfcData = async () => {
       try {
-        const parsed = JSON.parse(data);
-        if (Array.isArray(parsed)) {
-          setPemfcData(parsed);
-          setNormalCount(parsed.filter((item) => item.state === 'NORMAL').length);
-          setWarningCount(parsed.filter((item) => item.state === 'WARNING').length);
-          setDangerCount(parsed.filter((item) => item.state === 'DANGER').length);
-          setTotalPemfcCount(parsed.length);
-        }
-      } catch (err) {
-        console.error('로컬 스토리지 데이터 파싱 오류:', err);
+        const response = await axios.get('http://localhost:8080/api/client/1/pemfc/all');
+        const rawData = response.data;
+
+        const processedData: PemfcInstance[] = rawData.map((item: any) => {
+          let state: 'NORMAL' | 'WARNING' | 'DANGER' = 'NORMAL';
+
+          if (item.powerVoltageState === 'DANGER' || item.temperatureState === 'DANGER') {
+            state = 'DANGER';
+          } else if (item.powerVoltageState === 'WARNING' || item.temperatureState === 'WARNING') {
+            state = 'WARNING';
+          }
+
+          return {
+            id: item.id,
+            clientId: item.clientId, 
+            modelName: item.modelName,
+            manufacturedDate: item.manufacturedDate,
+            lat: item.lat,
+            lng: item.lng,
+            powerVoltageState: item.powerVoltageState,
+            temperatureState: item.temperatureState,
+            state,
+          };
+        });
+
+        setPemfcData(processedData); 
+
+      } catch (error) {
+        console.error('PEMFC API 데이터 가져오기 실패:', error);
       }
-    }
+    };
+
+    fetchPemfcData();
   }, []);
 
-  // 데이터 불러오기 (데이터 바뀔 때마다 동기화)
+  // 상태 동기화 (pemfcData 변경 시마다) - O
   useEffect(() => {
     setTotalPemfcCount(pemfcData.length);
     setNormalCount(pemfcData.filter((item) => item.state === 'NORMAL').length);
@@ -64,17 +88,16 @@ const Pemfc = () => {
     setDangerCount(pemfcData.filter((item) => item.state === 'DANGER').length);
   }, [pemfcData]);
 
-  // leaflet 지도 초기화
+  // leaflet 지도 초기화 - O
   useEffect(() => {
     if (mapRef.current && mapRef.current.childElementCount === 0) {
-      const map = L.map(mapRef.current).setView([37.55083, 127.07389], 13);
+      const map = L.map(mapRef.current).setView([36.6354, 127.8375], 6);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors',
       }).addTo(map);
       setLeafletMap(map);
     }
   }, []);
-
 
   // pemfcData가 변경될 때 지도 마커 초기화 후 재렌더링
   useEffect(() => {
@@ -85,7 +108,6 @@ const Pemfc = () => {
     });
 
     const newMarkers: L.Marker[] = [];
-
     const customIcon = L.icon({
       iconUrl: locationIcon,
       iconSize: [32, 32],
@@ -102,7 +124,7 @@ const Pemfc = () => {
       if (!isNaN(lat) && !isNaN(lng)) {
         const marker = L.marker([lat, lng], { icon: customIcon })
           .addTo(leafletMap)
-          .bindPopup(`${item.clientName}입니다.`)
+          .bindPopup(`${item.clientId}입니다.`)
           .openPopup();
         newMarkers.push(marker);
       }
@@ -111,29 +133,57 @@ const Pemfc = () => {
     setMarkerRefs(newMarkers);
   }, [leafletMap, pemfcData]);
 
-  // 입력한 PEMFC 데이터 로컬 저장소에 추가
-  const handleSubmit = async () => {
+  // PEMFC 등록
+  const handleRegister = async (formData: {
+    clientId: number;
+    modelName: string;
+    lat: number;
+    lng: number;
+    manufacturedDate: string;
+  }) => {
     try {
-      const newEntry: PemfcInstance = {
-        modelName,
-        clientName,
-        lat: parseFloat(lat),
-        lng: parseFloat(lng),
-        manufacturedDate,
-        state: 'NORMAL',
+      const payload = {
+        ...formData,
+        powerVoltageState: 'NORMAL',
+        temperatureState: 'NORMAL',
       };
-      const updatedData = [...pemfcData, newEntry];
-      localStorage.setItem('pemfcData', JSON.stringify(updatedData));
-      setPemfcData(updatedData);
-      alert('PEMFC 등록 성공! (로컬 저장)');
+
+      await axios.post('http://localhost:8080/api/pemfc', payload);
+      alert('PEMFC 등록 성공!');
       setIsRegistrationModalOpen(false);
     } catch (error) {
-      alert('로컬 저장 중 오류 발생');
+      alert('등록 실패');
       console.error(error);
     }
   };
 
-  // 모든 PEMFC 데이터 로컬 저장소에서 삭제
+  // 모든 PEMFC 데이터 재조회
+  const handleReload = async () => {
+    try {
+      const response = await axios.get('http://localhost:8080/api/client/{clientId}/pemfc/all');
+      const rawData = response.data;
+
+      if (Array.isArray(rawData)) {
+        const mappedData = rawData.map((item: any) => ({
+          id: item.id,
+          modelName: item.modelName,
+          clientId: item.clientId, // 필요한 경우 어딘가에서 주입
+          lat: item.lat,
+          lng: item.lng,
+          manufacturedDate: item.manufacturedDate,
+          powerVoltageState: item.powerVoltageState,
+          temperatureState: item.temperatureState,
+          state: determineState(item.powerVoltageState, item.temperatureState),
+        }));
+
+        setPemfcData(mappedData);
+      }
+    } catch (error) {
+      console.error('PEMFC 데이터 불러오기 오류:', error);
+    }
+  };
+
+  // 모든 PEMFC 삭제
   const handleDeleteAll = () => {
     if (window.confirm('모든 PEMFC 데이터를 삭제하시겠습니까?')) {
       localStorage.removeItem('pemfcData');
@@ -147,28 +197,14 @@ const Pemfc = () => {
     }
   };
 
-  // 모든 PEMFC 데이터 재조회
-  const handleReload = () => {
-    const data = localStorage.getItem('pemfcData');
-    if (data) {
-      try {
-        const parsed = JSON.parse(data);
-        if (Array.isArray(parsed)) setPemfcData(parsed);
-      } catch (err) {
-        console.error('로컬 스토리지 데이터 파싱 오류:', err);
-      }
-    }
-  };
-
+  // 특정 PEMFC 삭제
   const handleDelete = (index: number) => {
     const updatedData = [...pemfcData];
-    updatedData.splice(index, 1); // 리스트에서 데이터 삭제
+    updatedData.splice(index, 1); 
     setPemfcData(updatedData);
 
-    // 로컬스토리지 업데이트
     localStorage.setItem('pemfcData', JSON.stringify(updatedData));
 
-    // 지도에서 해당 마커 제거
     if (leafletMap) {
       const markerToRemove = markerRefs[index];  
       if (markerToRemove) {
@@ -176,7 +212,6 @@ const Pemfc = () => {
       }
     }
 
-    // 마커 배열에서 해당 마커 제거
     const updatedMarkers = [...markerRefs];
     updatedMarkers.splice(index, 1);  
     setMarkerRefs(updatedMarkers); 
@@ -195,7 +230,6 @@ const Pemfc = () => {
   const closeDeleteModal = () => {
     setIsDeleteModalOpen(false); 
   };
-
 
   return (
     <>
@@ -301,7 +335,7 @@ const Pemfc = () => {
             </div>
           </div>
         </div>
-
+        
         {/* 삭제 확인 모달 */}
           {isDeleteModalOpen && (
             <div className={styles.deleteModalOverlay}>
@@ -314,84 +348,9 @@ const Pemfc = () => {
               </div>
             </div>
           )}
-
-        {/* 등록 모달 */}
-        {isRegistrationModalOpen && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.modal}>
-              <div className={styles.formRegistration}>
-                <div className={styles.legend}>
-                  <div className={styles.formTitle}>PEMFC 등록</div>
-                </div>
-                <div className={`${styles.inputField} ${styles.deviceName}`}>
-                  <div className={styles.label}>PEMFC명</div>
-                  <input
-                    className={styles.input}
-                    placeholder="PEMFC명을 입력하세요."
-                    value={modelName}
-                    onChange={(e) => setModelName(e.target.value)}
-                  />
-                </div>
-                <div className={`${styles.inputField} ${styles.clientName}`}>
-                  <div className={styles.label}>고객명</div>
-                  <input
-                    className={styles.input}
-                    placeholder="고객명을 입력하세요."
-                    value={clientName}
-                    onChange={(e) => setClientName(e.target.value)}
-                  />
-                </div>
-                <div className={`${styles.inputField} ${styles.deviceLocation}`}>
-                  <div className={styles.label}>
-                    위치
-                    <span className={styles.exampleLocationText}>
-                      {' '}
-                      (EX. 37.55083, 127.07389 → 세종대학교)
-                    </span>
-                  </div>
-                  <div className={styles.locationInputs}>
-
-                      <input
-                        className={styles.input}
-                        placeholder="위도"
-                        value={lat}
-                        onChange={(e) => setLat(e.target.value)}
-                      />
-
-
-                      <input
-                        className={styles.input}
-                        placeholder="경도"
-                        value={lng}
-                        onChange={(e) => setLng(e.target.value)}
-                      />
-
-                  </div>
-                </div>
-                <div className={`${styles.inputField} ${styles.manufacturedDate}`}>
-                  <div className={styles.label}>제조 날짜</div>
-                  <input
-                    className={styles.input}
-                    type="date"
-                    value={manufacturedDate}
-                    onChange={(e) => setManufacturedDate(e.target.value)}
-                  />
-                </div>
-                <div className={styles.buttonGroup}>
-                  <button className={styles.registerButton2} onClick={handleSubmit}>
-                    등록하기
-                  </button>
-                  <button
-                    className={styles.cancelButton}
-                    onClick={() => setIsRegistrationModalOpen(false)}
-                  >
-                    취소
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        
+        
+        {isRegistrationModalOpen && (<RegistrationModal onClose={() => setIsRegistrationModalOpen(false)} onSubmit={handleRegister}/>)}
       </main>
     </>
   );

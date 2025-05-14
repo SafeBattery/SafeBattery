@@ -20,8 +20,8 @@ const PemfcRow: React.FC<PemfcRowProps> = ({
 }) => {
 
   const navigate = useNavigate();
-  const handleOpenDashboard = (modelName: string) => {
-    navigate(`/${modelName}/dashboard`);
+  const handleOpenDashboard = (id: number) => {
+    navigate(`/${id}/dashboard`);
   };
   const statusLabel =
     item.state === 'NORMAL' ? '정상' : item.state === 'WARNING' ? '경고' : '위험';
@@ -35,13 +35,13 @@ const PemfcRow: React.FC<PemfcRowProps> = ({
   return (
     <tr>
       <td>
-        {item.modelName}
+        {item.id}
         <span className="material-icons" 
           style = {{ verticalAlign: 'middle',
             marginLeft: '10px',
             color: '#4f7bf6',
             cursor: 'pointer' }}
-          onClick={() => handleOpenDashboard(item.modelName)}
+          onClick={() => handleOpenDashboard(item.id)}
           >
             open_in_new
           </span>
@@ -50,7 +50,7 @@ const PemfcRow: React.FC<PemfcRowProps> = ({
         <div className={`${styles.deviceStatus} ${statusStyle}`}>{statusLabel}</div>
       </td>
       <td>{item.manufacturedDate}</td>
-      <td>{item.clientName}</td>
+      <td>{item.clientId}</td>
       <td style={{ position: 'relative' }}>
         <span
           className="material-icons"

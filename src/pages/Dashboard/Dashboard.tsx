@@ -3,9 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import styles from './Dashboard.module.css';
 import LineCharts from './components/LineCharts';
 import ImpactCharts from './components/ImpactCharts';
+import axios from 'axios';
 
 function Dashboard() {
-  const { modelName } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [latestValues, setLatestValues] = useState({
@@ -27,19 +28,24 @@ function Dashboard() {
 
   // 데이터 API 호출
   useEffect(() => {
-    fetch('http://localhost:8080/api/pemfc/1/record/all')
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          const last = data[data.length - 1];
-          setLatestValues({
-            pw: last.pw,
-            u_totV: last.u_totV,
-            t_3: last.t_3,
-          });
-        }
-      });
-  }, []);
+  if (!id) return;
+
+  axios.get(`http://localhost:8080/api/pemfc/${id}/record/all`)
+    .then(response => {
+      const data = response.data;
+      if (Array.isArray(data) && data.length > 0) {
+        const last = data[data.length - 1];
+        setLatestValues({
+          pw: last.pw,
+          u_totV: last.u_totV,
+          t_3: last.t_3,
+        });
+      }
+    })
+    .catch(error => {
+      console.error("API 호출 실패:", error);
+    });
+}, [id]);
 
   const formatTime = (date: Date) => {
     const hours = date.getHours().toString().padStart(2, '0');
@@ -59,9 +65,11 @@ function Dashboard() {
     <>
       {/* 헤더 */}
       <div className={styles.container}>
-        <div className={styles.header}>{ modelName }의 대시보드 페이지입니다.</div>
+        <div className={styles.header}>
+          {id ? `${id}의 대시보드 페이지입니다.` : '장비 ID를 불러오는 중입니다...'}
+        </div>
         <div className={styles.subtext}>
-          모든 PEMFC 장비의 상태를 SAVE ENERGY 모니터링 시스템을 통해 간편하게 확인하세요.
+          PEMFC 장비의 상태를 SAFE BATTERY 대시보드를 통해 간편하게 확인하세요.
         </div>
         <span className="material-icons"
           style={{

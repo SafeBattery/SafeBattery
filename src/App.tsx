@@ -9,7 +9,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Pemfc />} />
         {/* 모델별 대시보드 페이지 경로 설정 */}
-        <Route path="/:modelName/dashboard" element={<Dashboard />} />
+        <Route path="/:id/dashboard" element={<Dashboard />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

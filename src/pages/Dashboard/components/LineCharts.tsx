@@ -1,15 +1,16 @@
 import * as d3 from 'd3';
 import { useRef, useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import styles from '../Dashboard.module.css';
 
 export default function LineCharts() {
   const chartRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [selectedGroup, setSelectedGroup] = useState("pw");
-  const pemfcId = 1; // 필요 시 props로 교체
+  const { id } = useParams();
 
   const handleCsvDownload = () => {
-    fetch(`http://localhost:8080/api/pemfc/${pemfcId}/csv`)
+    fetch(`http://localhost:8080/api/pemfc/${id}/csv`)
       .then(res => {
         if (!res.ok) throw new Error("Download failed");
         return res.blob();
@@ -18,7 +19,7 @@ export default function LineCharts() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `pemfc_${pemfcId}_data.csv`;
+        a.download = `pemfc_${id}_data.csv`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -85,7 +86,7 @@ export default function LineCharts() {
 
     const bisect = d3.bisector((d: any) => d.index).left;
 
-    fetch("http://localhost:8080/api/pemfc/1/record/all")
+    fetch(`http://localhost:8080/api/pemfc/${id}/record/all`)
       .then(res => res.json())
       .then((rawData) => {
         if (!rawData || !Array.isArray(rawData)) return;
