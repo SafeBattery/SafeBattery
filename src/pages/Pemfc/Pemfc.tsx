@@ -314,7 +314,7 @@ const Pemfc = () => {
                     <th>장비명</th>
                     <th>상태</th>
                     <th>측정시간</th>
-                    <th>주소</th>
+                    <th>고객명</th>
                     <th>기타</th>
                   </tr>
                 </thead>

@@ -35,7 +35,7 @@ const PemfcRow: React.FC<PemfcRowProps> = ({
   return (
     <tr>
       <td>
-        {item.id}
+        {item.modelName}
         <span className="material-icons" 
           style = {{ verticalAlign: 'middle',
             marginLeft: '10px',
