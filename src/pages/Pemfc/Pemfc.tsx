@@ -1,20 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { PemfcInstance } from './types/pemfc';
-import { StatusCard, PemfcRow, RegistrationModal } from './components';
+import { StatusCard, PemfcRow, RegistrationModal, RankRow } from './components';
 import axios from 'axios'
 import L from 'leaflet';
 import locationIcon from './assets/location_on.png';
 import styles from './Pemfc.module.css';
 import 'leaflet/dist/leaflet.css';
+import { dummyData_power } from './dummy_data/dummyData_power';
+import { dummyData_voltage } from './dummy_data/dummyData_voltage';
+import { dummyData_temperature } from './dummy_data/dummyData_temperature';
 
 const Pemfc = () => {
-
-  // PEMFC 모달 관련
-  const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false); 
-
-  // 개별 PEMFC 삭제 관련
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);  
 
   // PEMFC 개별 인스턴스 관리 관련
   const [pemfcData, setPemfcData] = useState<PemfcInstance[]>([]);
@@ -25,37 +21,45 @@ const Pemfc = () => {
   const [warningCount, setWarningCount] = useState(0);
   const [dangerCount, setDangerCount] = useState(0);
 
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-
+  // PEMFC 상태 결정
   const determineState = (
-    powerVoltageState: 'NORMAL' | 'WARNING' | 'DANGER',
+    powerState: 'NORMAL' | 'WARNING' | 'DANGER',
+    voltageState: 'NORMAL' | 'WARNING' | 'DANGER',
     temperatureState: 'NORMAL' | 'WARNING' | 'DANGER'
   ): 'NORMAL' | 'WARNING' | 'DANGER' => {
-    if (powerVoltageState === 'DANGER' || temperatureState === 'DANGER') return 'DANGER';
-    if (powerVoltageState === 'WARNING' || temperatureState === 'WARNING') return 'WARNING';
+    if (powerState === 'DANGER' || voltageState === 'DANGER' || temperatureState === 'DANGER' ) return 'DANGER';
+    else if (powerState === 'WARNING' || voltageState === 'WARNING' || temperatureState === 'WARNING') return 'WARNING';
     return 'NORMAL';
   };
 
-  // 지도 관련 - O
+  const [selectedGroup, setSelectedGroup] = useState("pw");
+
+  const [clientName, setClientName] = useState<string>('');
+
+  // PEMFC 위치 표시 지도 관련 
   const mapRef = useRef<HTMLDivElement>(null);
   const [leafletMap, setLeafletMap] = useState<L.Map | null>(null);
   const [markerRefs, setMarkerRefs] = useState<L.Marker[]>([]);
 
-  // API 데이터 불러오기 (마운트 시 한 번 실행) - O
+
+  // PEMFC 테이블 관련
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
+  // PEMFC 등록 관련 
+  const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false); 
+
+  // 특정 PEMFC 삭제 관련 
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
+
+  // API 데이터 불러오기 (마운트 시 한 번 실행)
   useEffect(() => {
     const fetchPemfcData = async () => {
-      try {
         const response = await axios.get('http://localhost:8080/api/client/1/pemfc/all');
-        const rawData = response.data;
+      try {        const rawData = response.data;
 
         const processedData: PemfcInstance[] = rawData.map((item: any) => {
-          let state: 'NORMAL' | 'WARNING' | 'DANGER' = 'NORMAL';
-
-          if (item.powerVoltageState === 'DANGER' || item.temperatureState === 'DANGER') {
-            state = 'DANGER';
-          } else if (item.powerVoltageState === 'WARNING' || item.temperatureState === 'WARNING') {
-            state = 'WARNING';
-          }
+          const state = determineState(item.powerState, item.voltageState, item.temperatureState);
 
           return {
             id: item.id,
@@ -64,9 +68,10 @@ const Pemfc = () => {
             manufacturedDate: item.manufacturedDate,
             lat: item.lat,
             lng: item.lng,
-            powerVoltageState: item.powerVoltageState,
+            powerState: item.powerState,
+            voltageState: item.voltageState,
             temperatureState: item.temperatureState,
-            state,
+            state: state
           };
         });
 
@@ -80,6 +85,19 @@ const Pemfc = () => {
     fetchPemfcData();
   }, []);
 
+  useEffect(() => {
+    const fetchClientName = async () => {
+      try {
+        const response = await axios.get('http://localhost:8080/api/client/1/name');
+        setClientName(response.data); // 예: "홍길동"
+      } catch (error) {
+        console.error('클라이언트 이름 가져오기 실패:', error);
+      }
+    };
+
+    fetchClientName();
+  }, []);
+
   // 상태 동기화 (pemfcData 변경 시마다) - O
   useEffect(() => {
     setTotalPemfcCount(pemfcData.length);
@@ -91,7 +109,14 @@ const Pemfc = () => {
   // leaflet 지도 초기화 - O
   useEffect(() => {
     if (mapRef.current && mapRef.current.childElementCount === 0) {
-      const map = L.map(mapRef.current).setView([36.6354, 127.8375], 6);
+      const initialZoom = 6;
+
+      const map = L.map(mapRef.current, {
+        zoom: initialZoom,
+        minZoom: initialZoom, 
+        scrollWheelZoom: true,
+      }).setView([36.6354, 127.8375], 6);
+
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors',
       }).addTo(map);
@@ -124,7 +149,7 @@ const Pemfc = () => {
       if (!isNaN(lat) && !isNaN(lng)) {
         const marker = L.marker([lat, lng], { icon: customIcon })
           .addTo(leafletMap)
-          .bindPopup(`${item.clientId}입니다.`)
+          .bindPopup(`${clientName}`)
           .openPopup();
         newMarkers.push(marker);
       }
@@ -144,10 +169,11 @@ const Pemfc = () => {
     try {
       const payload = {
         ...formData,
-        powerVoltageState: 'NORMAL',
+        powerState: 'NORMAL',
+        voltageState: 'NORMAL',
         temperatureState: 'NORMAL',
       };
-      await axios.post('http://localhost:8080/api/pemfc', payload);
+      await axios.post('http://localhost:8080/api/pemfc/', payload);
       alert('PEMFC 등록 성공!');
       setIsRegistrationModalOpen(false);
     } catch (error) {
@@ -166,13 +192,14 @@ const Pemfc = () => {
         const mappedData = rawData.map((item: any) => ({
           id: item.id,
           modelName: item.modelName,
-          clientId: item.clientId, // 필요한 경우 어딘가에서 주입
+          clientId: item.clientId, 
           lat: item.lat,
           lng: item.lng,
           manufacturedDate: item.manufacturedDate,
-          powerVoltageState: item.powerVoltageState,
+          powerState: item.powerState,
+          voltageState: item.voltageState,
           temperatureState: item.temperatureState,
-          state: determineState(item.powerVoltageState, item.temperatureState),
+          state: determineState(item.powerState, item.voltageState, item.temperatureState),
         }));
 
         setPemfcData(mappedData);
@@ -197,28 +224,45 @@ const Pemfc = () => {
   };
 
   // 특정 PEMFC 삭제
-  const handleDelete = (index: number) => {
+  const handleDelete = async (index: number) => {
+  const pemfcToDelete = pemfcData[index];
+  const pemfcId = pemfcToDelete?.id;
+
+  if (!pemfcId) {
+    console.error("삭제할 PEMFC의 ID를 찾을 수 없습니다.");
+    return;
+  }
+
+  try {
+    // DELETE 요청
+    await axios.delete(`http://localhost:8080/api/pemfc/${pemfcId}/delete`);
+
+    // UI 상태 동기화
     const updatedData = [...pemfcData];
-    updatedData.splice(index, 1); 
+    updatedData.splice(index, 1);
     setPemfcData(updatedData);
 
-    localStorage.setItem('pemfcData', JSON.stringify(updatedData));
-
+    // 마커 제거
     if (leafletMap) {
-      const markerToRemove = markerRefs[index];  
+      const markerToRemove = markerRefs[index];
       if (markerToRemove) {
-        leafletMap.removeLayer(markerToRemove); 
+        leafletMap.removeLayer(markerToRemove);
       }
     }
 
     const updatedMarkers = [...markerRefs];
-    updatedMarkers.splice(index, 1);  
-    setMarkerRefs(updatedMarkers); 
+    updatedMarkers.splice(index, 1);
+    setMarkerRefs(updatedMarkers);
 
-    setSelectedIndex(null);  
-    setIsDeleteModalOpen(false); 
-  };
+    setSelectedIndex(null);
+    setIsDeleteModalOpen(false);
 
+    console.log(`PEMFC ${pemfcId} 삭제 완료`);
+  } catch (error) {
+    console.error("PEMFC 삭제 중 오류 발생:", error);
+    alert("삭제 중 오류가 발생했습니다. 다시 시도해주세요.");
+  }
+};
   // 특정 PEMFC 삭제 모달 열기
   const openDeleteModal = (index: number) => {
     setDeleteIndex(index); 
@@ -271,8 +315,21 @@ const Pemfc = () => {
           </div>
 
           {/* 세 번째 카드 */}
-          <div className={styles.card}>
-            
+          <div className={`${styles.card} ${styles.rank}`}>
+            <div className={styles.cardHeader}>
+              <div className={styles.cardTitle}>에러별 PEMFC 위험도 랭킹</div>
+              <select
+                className={styles.selectDropdown}
+                value={selectedGroup}
+                onChange={(e) => setSelectedGroup(e.target.value)}
+                aria-label="Select data group"
+              >
+                {["pw", "u_totV", "t_3"].map((group) => (
+                  <option key={group} value={group}>{group}</option>
+                ))}
+              </select>
+            </div>
+            <RankRow selectedGroup={selectedGroup} />
           </div>
         </div>
 
@@ -281,7 +338,7 @@ const Pemfc = () => {
 
           {/* 지도 섹션*/}
           <div className={styles.mapSection}>
-            <div className={styles.mapContainer}>
+            <div className={styles.mapContainer}>s
               <div
                 ref={mapRef}
                 style={{ width: '100%', height: '400px', borderRadius: '8px' }}
@@ -310,7 +367,7 @@ const Pemfc = () => {
               <table className={styles.deviceTable}>
                 <thead>
                   <tr>
-                    <th>장비명</th>
+                    <th>PEMFC명</th>
                     <th>상태</th>
                     <th>제조 날짜</th>
                     <th>고객명</th>

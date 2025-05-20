@@ -1,3 +1,7 @@
+body {
+  height: 800px;
+}
+
 /* 헤더 */
 .container {
   padding: 24px 24px 0px 24px;
@@ -33,8 +37,9 @@
   justify-content: space-between;
   flex-wrap: nowrap;
 }
-.cardSection.now .card{
+.cardSection.now .card {
   flex: 1;
+  height: 150px;
   min-width: 220px;
   background: #fff; 
   border-radius: 12px;
@@ -44,12 +49,36 @@
   align-items: center;
   justify-content: center;
 }
-/* time 카드 */
+ /* .cardSection.now .card {
+  flex: 0 1 200px;
+  max-width: 575px;
+  min-width: 220px;
+  background: #fff; 
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 3px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+ } */
+
+ /* 시간 카드 */
+.card.time {
+  flex: 0 1 200px;
+  max-width: 200px;
+  background: #fff; 
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 3px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .cardSection.now .timeContent {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   width: 100%;
   text-align: center;
 }
@@ -65,48 +94,117 @@
   color: #111;
   letter-spacing: 1px;
 }
-/* power, u_totV, t_3 카드 */
-.powerValue, .voltageValue, .thermoValue {
-  font-size: 40px;
-  font-weight: 600;
-  color: #000;
+
+/* POWER 카드 */
+.card.power {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px; 
 }
-.card span.material-icons {
-  font-size: 60px !important;
-  margin-right: 12px;
-  color: #555;
+.card.power .cardTitle {
+  font-size: 22px;
+  font-weight: 600;
+  color: #444;
+  letter-spacing: 0.5px;
+}
+.card.power .cardContent {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+.card.power .powerState {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: #14ca74;
+  border: none;
+}
+.card.voltage {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px; 
+}
+.card.voltage .cardTitle {
+  font-size: 22px;
+  font-weight: 600;
+  color: #444;
+  letter-spacing: 0.5px;
+}
+.card.voltage .cardContent {
+  display: flex;
+  justify-item: center;
+  align-items: center;
+  gap: 12px;
+}
+.card.voltage .voltageState {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: #14ca74;
+  border: none;
+}
+.card.temperature {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px; 
+}
+.card.temperature .cardTitle {
+  font-size: 22px;
+  font-weight: 600;
+  color: #444;
+  letter-spacing: 0.5px;
+}
+.card.temperature .cardContent {
+  display: flex;
+  justify-item: center;
+  align-items: center;
+  gap: 12px;
+}
+.card.temperature .temperatureState {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: #14ca74;
+  border: none;
+}
+.powerValue, .voltageValue, .temperatureValue {
+  font-size: 36px;
+  font-weight: 600;
+  color: #111;
 }
 
+
+/* 센서 데이터 트랜드 */
 .cardSection.history {
   display: flex;
   gap: 24px;
   justify-content: space-between;
   flex-wrap: nowrap;
 }
-.cardSection.history .card {
-  flex: 1;
-  min-width: 200px; 
-  height: 400px;
-  background: #fff;
-  border-radius: 8px;
-  padding: 20px;
+.cardSection.history .card.trend {
+  flex: 0 1 calc((100vw - 72px) * 0.5) !important;
+  max-width: calc((100vw - 72px) * 0.5);
+  height: 375px;
+  background: #fff; 
+  border-radius: 25px;
+  padding: 24px;
+  display: block;
   box-shadow: 3px rgba(0, 0, 0, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
-.chartContainer {
-  width: 100%;
-  height: 100%;
-  padding: 12px;
-}
-.chartHeader {
+.card.trend .cardHeader {
   display: flex;
   align-items: center;
   margin-bottom: 10px;
   gap: 20px;
 }
-.chartTitle {
+.card.trend .cardTitle {
   font-size: 18px;
   font-weight: 600;
   color: #333;
@@ -126,7 +224,6 @@
 }
 .excelDownloadButton {
   padding: 8px 16px;
-  border-radius: 40px;
   font-size: 14px;
   display: flex;
   align-items: center;
@@ -135,4 +232,116 @@
   border: none;
   background-color: #4f7bf6;
   color: #fff;
+}
+.trendCharts {
+  display: flex;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  gap: 12px;
+}
+.lineChartContainer {
+  flex: 0 1 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 90%;
+}
+
+/* Heatmap은 우측 하단에 고정 */
+.card.dynamask .cardHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 20px;
+}
+.card.dynamask .cardTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+.selectDropdown {
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  color: #333;
+  cursor: pointer;
+  outline: none;
+}
+.selectDropdown:hover {
+  border-color: #888;
+}
+.heatmapContainer {
+  flex: 1;
+  position: absolute;
+  bottom: 40px;
+  right: 12px;
+  width: 280px;
+  height: 240px;
+}
+
+/* 다이너마스크 */
+.cardSection.history .card.dynamask {
+  flex: 0 1 calc((100vw - 72px) * 0.5) !important;
+  max-width: calc((100vw - 72px) * 0.5);
+  height: 375px;
+  background: #fff; 
+  border-radius: 25px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 3px rgba(0, 0, 0, 0.2);
+  overflow-x: auto;
+  overflow-y: auto;
+  min-width: 600px;
+}
+.cardSection.history .card.dynamask .cardHeader {
+  position: sticky;
+}
+.dynamask .lineChartContainer {
+  flex: 0 1 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 50%;
+}
+.dynamask .impactChartContainer {
+  flex: 0 1 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 90%;
+}
+.checkBoxContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 10px;
+}
+
+.checkBoxContainer label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+}
+
+
+
+
+
+
+
+
+.card.rank {
+  display: flex;
+  flex-direction: column;
+  padding: 16px 0px;
+  flex: 0 1 598px;  
+  max-width: 598px; 
+}
+.cardHeader {
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }

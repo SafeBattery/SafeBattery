@@ -6,8 +6,8 @@ import styles from '../Pemfc.module.css';
 interface RegistrationModalProps {
   onClose: () => void;
   onSubmit: (data: {
-    clientId: number;
     modelName: string;
+    clientId: number;
     lat: number;
     lng: number;
     manufacturedDate: string;
@@ -15,13 +15,14 @@ interface RegistrationModalProps {
 }
 
 const RegistrationModal: React.FC<RegistrationModalProps> = ({ onClose, onSubmit }) => {
-  const [clientId, setClientId] = useState('');
   const [modelName, setModelName] = useState('');
+  const [clientId, setClientId] = useState('');
   const [lat, setLat] = useState('');
   const [lng, setLng] = useState('');
   const [manufacturedDate, setManufacturedDate] = useState('');
 
   const handleSubmit = () => {
+    console.log('Submitting clientId:', clientId);
     onSubmit({
       modelName,
       clientId: parseInt(clientId, 10),

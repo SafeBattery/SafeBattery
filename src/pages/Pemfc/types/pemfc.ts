@@ -6,7 +6,8 @@ export interface PemfcInstance {
   manufacturedDate: string; 
   lat: number;
   lng: number;
-  powerVoltageState: 'NORMAL' | 'WARNING' | 'DANGER';
+  powerState: 'NORMAL' | 'WARNING' | 'DANGER';
+  voltageState: 'NORMAL' | 'WARNING' | 'DANGER';
   temperatureState: 'NORMAL' | 'WARNING' | 'DANGER';
-  state: 'NORMAL' | 'WARNING' | 'DANGER'; // 가공 후 할당될 필드
+  state: 'NORMAL' | 'WARNING' | 'DANGER';
 }

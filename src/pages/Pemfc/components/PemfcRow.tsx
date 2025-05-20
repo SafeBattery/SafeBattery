@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { PemfcInstance } from "../types/pemfc";
 import { useNavigate } from "react-router-dom";
 
@@ -20,9 +21,11 @@ const PemfcRow: React.FC<PemfcRowProps> = ({
 }) => {
 
   const navigate = useNavigate();
+  const [clientName, setClientName] = useState<string>("");
   const handleOpenDashboard = (id: number) => {
     navigate(`/${id}/dashboard`);
   };
+
   const statusLabel =
     item.state === 'NORMAL' ? '정상' : item.state === 'WARNING' ? '경고' : '위험';
   const statusStyle =
@@ -31,6 +34,19 @@ const PemfcRow: React.FC<PemfcRowProps> = ({
       : item.state === 'WARNING'
       ? styles.warning
       : styles.danger;
+
+  // 클라이언트 이름 불러오기
+  useEffect(() => {
+    if (!item.clientId) return;
+
+    fetch(`http://localhost:8080/api/client/${item.clientId}/name`)
+      .then(res => res.text())
+      .then(name => setClientName(name))
+      .catch(err => {
+        console.error("클라이언트 이름 불러오기 실패:", err);
+        setClientName("(알 수 없음)");
+      });
+  }, [item.clientId]);
 
   return (
     <tr>
@@ -50,7 +66,7 @@ const PemfcRow: React.FC<PemfcRowProps> = ({
         <div className={`${styles.deviceStatus} ${statusStyle}`}>{statusLabel}</div>
       </td>
       <td>{item.manufacturedDate}</td>
-      <td>{item.clientId}</td>
+      <td>{clientName}</td>
       <td style={{ position: 'relative' }}>
         <span
           className="material-icons"
