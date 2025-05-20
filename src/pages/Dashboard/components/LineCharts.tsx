@@ -1,32 +1,46 @@
-import * as d3 from 'd3';
-import React, { useRef, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import styles from '../Dashboard.module.css';
+import * as d3 from "d3";
+import React, { useRef, useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import styles from "../Dashboard.module.css";
 
 interface LineChartsProps {
-  selectedGroup: 'pw' | 'u_totV' | 't_3';
+  selectedGroup: "pw" | "u_totV" | "t_3";
   selectedFeatures: string[];
 }
 
 const featureMap: Record<string, { apiPath: string; features: string[] }> = {
   pw: {
-    apiPath: 'voltagepower',
+    apiPath: "voltagepower",
     features: [
-      'iA', 'iA_diff', 'P_H2_supply', 'P_H2_inlet',
-      'P_Air_supply', 'P_Air_inlet', 'm_Air_write', 'm_H2_write', 'T_Stack_inlet'
-    ]
+      "iA",
+      "iA_diff",
+      "P_H2_supply",
+      "P_H2_inlet",
+      "P_Air_supply",
+      "P_Air_inlet",
+      "m_Air_write",
+      "m_H2_write",
+      "T_Stack_inlet",
+    ],
   },
   u_totV: {
-    apiPath: 'voltagepower',
+    apiPath: "voltagepower",
     features: [
-      'iA', 'iA_diff', 'P_H2_supply', 'P_H2_inlet',
-      'P_Air_supply', 'P_Air_inlet', 'm_Air_write', 'm_H2_write', 'T_Stack_inlet'
-    ]
+      "iA",
+      "iA_diff",
+      "P_H2_supply",
+      "P_H2_inlet",
+      "P_Air_supply",
+      "P_Air_inlet",
+      "m_Air_write",
+      "m_H2_write",
+      "T_Stack_inlet",
+    ],
   },
   t_3: {
-    apiPath: 'temperature',
-    features: ['P_H2_inlet', 'P_Air_inlet', 'T_Heater', 'T_Stack_inlet']
-  }
+    apiPath: "temperature",
+    features: ["P_H2_inlet", "P_Air_inlet", "T_Heater", "T_Stack_inlet"],
+  },
 };
 
 function LineCharts({ selectedGroup, selectedFeatures }: LineChartsProps) {
@@ -46,7 +60,10 @@ function LineCharts({ selectedGroup, selectedFeatures }: LineChartsProps) {
       for (let entry of entries) {
         const { width, height } = entry.contentRect;
         setDimensions((prev) => {
-          if (Math.abs(width - prev.width) > 1 || Math.abs(height - prev.height) > 1) {
+          if (
+            Math.abs(width - prev.width) > 1 ||
+            Math.abs(height - prev.height) > 1
+          ) {
             return { width, height };
           }
           return prev;
@@ -61,8 +78,8 @@ function LineCharts({ selectedGroup, selectedFeatures }: LineChartsProps) {
     if (!id || !featureConfig) return;
     const url = `http://localhost:8080/api/pemfc/${id}/dynamask/${featureConfig.apiPath}/recent`;
     fetch(url)
-      .then(res => res.json())
-      .then(json => {
+      .then((res) => res.json())
+      .then((json) => {
         if (json?.value) setMaskData(json.value);
       })
       .catch(console.error);
@@ -71,8 +88,8 @@ function LineCharts({ selectedGroup, selectedFeatures }: LineChartsProps) {
   useEffect(() => {
     if (!id) return;
     fetch(`http://localhost:8080/api/pemfc/${id}/record/recent600`)
-      .then(res => res.json())
-      .then(json => {
+      .then((res) => res.json())
+      .then((json) => {
         if (Array.isArray(json)) {
           setRecordData(json.reverse()); // 시간순 정렬
         }
@@ -81,10 +98,11 @@ function LineCharts({ selectedGroup, selectedFeatures }: LineChartsProps) {
   }, [id]);
 
   useEffect(() => {
-    if (!svgRef.current || dimensions.width === 0 || dimensions.height === 0) return;
+    if (!svgRef.current || dimensions.width === 0 || dimensions.height === 0)
+      return;
 
     const svg = d3.select(svgRef.current);
-    svg.selectAll('*').remove();
+    svg.selectAll("*").remove();
 
     const margin = { top: 20, right: 20, bottom: 30, left: 40 };
     const svgWidth = dimensions.width;
@@ -92,17 +110,27 @@ function LineCharts({ selectedGroup, selectedFeatures }: LineChartsProps) {
     const chartWidth = svgWidth - margin.left - margin.right;
     const chartHeight = svgHeight - margin.top - margin.bottom;
 
-    const chartArea = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+    const chartArea = svg
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
 
     const maxLen = Math.max(maskData.length, recordData.length);
-    const x = d3.scaleLinear().domain([0, maxLen - 1]).range([0, chartWidth]);
+    const x = d3
+      .scaleLinear()
+      .domain([0, maxLen - 1])
+      .range([0, chartWidth]);
 
-    chartArea.append('g')
-      .attr('transform', `translate(0,${chartHeight})`)
+    chartArea
+      .append("g")
+      .attr("transform", `translate(0,${chartHeight})`)
       .call(d3.axisBottom(x).tickSize(-chartHeight).tickPadding(8))
-      .selectAll('line').attr('stroke', '#ddd');
+      .selectAll("line")
+      .attr("stroke", "#ddd");
 
-    const color = d3.scaleOrdinal<string>().domain(featureConfig.features).range(d3.schemeCategory10);
+    const color = d3
+      .scaleOrdinal<string>()
+      .domain(featureConfig.features)
+      .range(d3.schemeCategory10);
 
     // Dynamask features (selectedFeatures)
     selectedFeatures.forEach((feature) => {
@@ -110,50 +138,67 @@ function LineCharts({ selectedGroup, selectedFeatures }: LineChartsProps) {
       if (idx === -1 || !maskData.length) return;
 
       const values = maskData.map((d, i) => ({ index: i, value: d[idx] }));
-      const extent = d3.extent(values, v => v.value) as [number, number];
+      const extent = d3.extent(values, (v) => v.value) as [number, number];
       const y = d3.scaleLinear().domain(extent).range([chartHeight, 0]).nice();
 
-      const line = d3.line<{ index: number; value: number }>()
-        .x(d => x(d.index))
-        .y(d => y(d.value));
+      const line = d3
+        .line<{ index: number; value: number }>()
+        .x((d) => x(d.index))
+        .y((d) => y(d.value));
 
-      chartArea.append('path')
+      chartArea
+        .append("path")
         .datum(values)
-        .attr('fill', 'none')
-        .attr('stroke', color(feature))
-        .attr('stroke-width', 1.5)
-        .attr('stroke-opacity', 0.8)
-        .attr('d', line);
+        .attr("fill", "none")
+        .attr("stroke", color(feature))
+        .attr("stroke-width", 1.5)
+        .attr("stroke-opacity", 0.8)
+        .attr("d", line);
     });
 
     // Record feature (only selectedGroup field)
-    const recordValues = recordData.map((d, i) => ({
-      index: i,
-      value: d[selectedGroup]
-    })).filter(d => d.value != null);
+    const recordValues = recordData
+      .map((d, i) => ({
+        index: i,
+        value: d[selectedGroup],
+      }))
+      .filter((d) => d.value != null);
 
     if (recordValues.length > 0) {
-      const extent = d3.extent(recordValues, d => d.value) as [number, number];
+      const extent = d3.extent(recordValues, (d) => d.value) as [
+        number,
+        number
+      ];
       const y = d3.scaleLinear().domain(extent).range([chartHeight, 0]).nice();
 
-      const line = d3.line<{ index: number; value: number }>()
-        .x(d => x(d.index))
-        .y(d => y(d.value));
+      const line = d3
+        .line<{ index: number; value: number }>()
+        .x((d) => x(d.index))
+        .y((d) => y(d.value));
 
-      chartArea.append('path')
+      chartArea
+        .append("path")
         .datum(recordValues)
-        .attr('fill', 'none')
-        .attr('stroke', '#ff6600') // record용 색상
-        .attr('stroke-width', 2)
-        .attr('d', line);
+        .attr("fill", "none")
+        .attr("stroke", "#ff6600") // record용 색상
+        .attr("stroke-width", 2)
+        .attr("d", line);
     }
-
   }, [maskData, recordData, dimensions, selectedFeatures, selectedGroup]);
 
   return (
-    <div className={styles.lineChartContainer} style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <svg ref={svgRef} style={{ display: 'block', width: '100%', height: '100%' }} />
-      <div ref={chartRef} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+    <div
+      className={styles.lineChartContainer}
+      style={{ position: "relative", width: "100%", height: "100%" }}
+    >
+      <svg
+        ref={svgRef}
+        style={{ display: "block", width: "100%", height: "100%" }}
+      />
+      <div
+        ref={chartRef}
+        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+      />
     </div>
   );
 }

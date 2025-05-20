@@ -1,138 +1,178 @@
-// LineCharts.tsx
-import * as d3 from 'd3';
-import { useRef, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import styles from '../Dashboard.module.css';
+// LineChart.tsx
+import * as d3 from "d3";
+import React, { useRef, useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import styles from "../Dashboard.module.css";
 
 interface LineChartProps {
   selectedGroup: string;
 }
 
 export default function LineChart({ selectedGroup }: LineChartProps) {
-  const chartRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
+  const svgRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
+  // 원본 데이터
+  const [data, setData] = useState<any[] | null>(null);
+  // 컨테이너 크기
+  const [dim, setDim] = useState({ width: 0, height: 0 });
+
+  // ─── 한 번만: 컨테이너 크기 관찰 ─────────────────────
   useEffect(() => {
-    if (chartRef.current) {
-      const resizeObserver = new ResizeObserver((entries) => {
-        for (let entry of entries) {
-          const { width, height } = entry.contentRect;
-          setDimensions({ width, height });
-        }
-      });
-      resizeObserver.observe(chartRef.current);
-      return () => resizeObserver.disconnect();
-    }
+    if (!containerRef.current) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      // 변화폭이 작으면 무시
+      setDim((prev) =>
+        Math.abs(prev.width - width) > 1 || Math.abs(prev.height - height) > 1
+          ? { width, height }
+          : prev
+      );
+    });
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
   }, []);
 
+  // ─── id 또는 selectedGroup 바뀔 때만 fetch ───────────────
   useEffect(() => {
-  if (!chartRef.current || dimensions.width === 0 || dimensions.height === 0) return;
+    if (!id) return;
+    setData(null); // 스켈레톤 표시
+    fetch(`http://localhost:8080/api/pemfc/${id}/record/recent600`)
+      .then((res) => res.json())
+      .then((arr) => {
+        if (Array.isArray(arr)) setData(arr.reverse());
+      })
+      .catch(console.error);
+    console.log("fetched");
+  }, [id, selectedGroup]);
 
-  d3.select(chartRef.current).selectAll('*').remove();
+  // ─── data, dim, selectedGroup 모두 준비되면 차트 draw ───────
+  useEffect(() => {
+    if (!data || dim.width === 0 || dim.height === 0) return;
 
-  const margin = { top: 20, right: 50, bottom: 20, left: 40 };
+    const margin = { top: 20, right: 50, bottom: 20, left: 40 };
+    const W = dim.width - margin.left - margin.right;
+    const H = dim.height - margin.top - margin.bottom;
 
-  // 💡 전체 svg 사이즈
-  const svgWidth = (dimensions.width) ;
-  const svgHeight = (dimensions.height) ;
+    const svg = d3
+      .select(svgRef.current!)
+      .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
+      .attr("preserveAspectRatio", "none");
 
-  // 💡 내부 차트 그릴 영역 사이즈 (margin 제외)
-  const chartWidth = svgWidth - margin.left - margin.right;
-  const chartHeight = svgHeight - margin.top - margin.bottom;
+    svg.selectAll("*").remove();
 
-  const svg = d3.select(chartRef.current)
-    .append("svg")
-    .attr("width", svgWidth)
-    .attr("height", svgHeight)
-    .attr("viewBox", `0 0 ${svgWidth} ${svgHeight}`)
-    .attr("preserveAspectRatio", "none");
+    const area = svg
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
 
-  const chartArea = svg.append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
+    // x, y 스케일
+    const N = data.length;
+    const x = d3
+      .scaleLinear()
+      .domain([0, N - 1])
+      .range([0, W]);
+    const values = data.map((d, i) => +d[selectedGroup]);
+    const y = d3
+      .scaleLinear()
+      .domain(d3.extent(values) as [number, number])
+      .nice()
+      .range([H, 0]);
 
-  const x = d3.scaleLinear().range([0, chartWidth]);
-  const y = d3.scaleLinear().range([chartHeight, 0]);
-  const xAxisG = chartArea.append("g").attr("transform", `translate(0,${chartHeight})`);
-  const yAxisG = chartArea.append("g");
+    // X축
+    area
+      .append("g")
+      .attr("transform", `translate(0,${H})`)
+      .call(d3.axisBottom(x).tickSize(-H).tickPadding(10))
+      .selectAll("line")
+      .attr("stroke", "#ddd");
 
-  const path = chartArea.append("path")
-    .attr("fill", "none")
-    .attr("stroke-width", 3);
+    // Y축
+    area
+      .append("g")
+      .call(d3.axisLeft(y).tickSize(-W).tickPadding(10))
+      .selectAll("line")
+      .attr("stroke", "#ddd");
 
-  const myColor = d3.scaleOrdinal<string>()
-    .domain(["pw", "u_totV", "t_3"])
-    .range(d3.schemeSet2);
+    // 라인
+    const lineGen = d3
+      .line<number>()
+      .x((_, i) => x(i))
+      .y((d) => y(d));
 
-  const focus = chartArea.append("g").style("display", "none");
-  const focusCircle = focus.append("circle").attr("r", 6).attr("fill", "black");
-  const focusText = focus.append("text")
-    .attr("x", 9)
-    .attr("dy", "-0.5em")
-    .style("font-size", "12px");
+    area
+      .append("path")
+      .datum(values)
+      .attr("fill", "none")
+      .attr(
+        "stroke",
+        d3.schemeSet2[["pw", "u_totV", "t_3"].indexOf(selectedGroup)]
+      )
+      .attr("stroke-width", 3)
+      .attr("d", lineGen);
+    console.log("rendered", data);
 
-  const bisect = d3.bisector((d: any) => d.index).left;
+    // 2) 사각형 그리기
+    const stateFieldMap: Record<string, string> = {
+      pw: "powerState",
+      u_totV: "voltageState",
+      t_3: "temperatureState",
+    };
+    const stateField = stateFieldMap[selectedGroup];
 
-  fetch(`http://localhost:8080/api/pemfc/${id}/record/recent600`)
-    .then(res => res.json())
-    .then((rawData) => {
-      if (!rawData || !Array.isArray(rawData)) return;
+    // 2-1) 데이터와 state를 함께 묶어서 배열 생성
+    const filteredData = data.map((d, i) => {
+      return { ...d, index: i };
+    });
+    const stateLines = filteredData.map((d) => {
+      const original = data[data.length - 1 - d.index]; // reverse 보정
+      return {
+        index: d.index,
+        state: original?.[stateField] as
+          | "NORMAL"
+          | "WARNING"
+          | "ERROR"
+          | undefined,
+      };
+    });
 
-      const data = rawData
-      const filteredData = data
-        .slice()               // 원본 배열을 복사 (직접 수정 방지)
-        .reverse()             // 배열 순서 반대로
-        .map((d, i) => ({
-          index: i,            // 새 순서에 따라 index 재부여
-          value: +d[selectedGroup]
-        }));
+    // 2-2) 색상 함수
+    const stateColor = (s: string | undefined) => {
+      if (s === "NORMAL") return "#14ca74";
+      if (s === "WARNING") return "#f0ad4e";
+      if (s === "ERROR") return "#d9534f";
+      return "#ccc";
+    };
+    const svgWidth = dim.width;
+    const svgHeight = dim.height;
 
-      const xExtent = d3.extent(filteredData, d => d.index) as [number, number];
-      const yExtent = d3.extent(filteredData, d => d.value) as [number, number];
+    // SVG 전체 크기에서 좌우 마진을 뺀 값이 바로 chartWidth
+    const chartWidth = svgWidth - margin.left - margin.right;
+    const chartHeight = svgHeight - margin.top - margin.bottom;
+    // 2-3) 수직선 그리기
+    area
+      .selectAll("line.state")
+      .data(stateLines)
+      .join("line")
+      .attr("class", "state")
+      .attr("x1", (d) => x(d.index))
+      .attr("x2", (d) => x(d.index))
+      .attr("y1", 0)
+      .attr("y2", chartHeight)
+      .attr("stroke", (d) => stateColor(d.state))
+      .attr("stroke-width", 1)
+      .attr("stroke-opacity", 0.15);
 
-      x.domain(xExtent).nice();
-      y.domain(yExtent).nice();
-
-      xAxisG.call(d3.axisBottom(x).tickSize(-chartHeight).tickPadding(10).tickFormat(d => `${(Number(d)-600)}`))
-        .selectAll("line").attr("stroke", "#ddd");
-      yAxisG.call(d3.axisLeft(y).tickSize(-chartWidth).tickPadding(10))
-        .selectAll("line").attr("stroke", "#ddd");
-
-      const line = d3.line<any>()
-        .x(d => x(d.index))
-        .y(d => y(d.value));
-
-      path.datum(filteredData)
-        .attr("d", line)
-        .attr("stroke", myColor(selectedGroup));
-
-      let stateField = "";
-        if (selectedGroup === "pw") stateField = "powerState";
-        else if (selectedGroup === "u_totV") stateField = "voltageState";
-        else if (selectedGroup === "t_3") stateField = "temperatureState";
-
-      // 상태별 수직선 추가
-      filteredData.forEach(d => {
-        const original = data[data.length - 1 - d.index]; // filteredData는 reverse된 상태
-        const state = original?.[stateField] || "UNKNOWN";
-
-        let color = "#ccc";
-        if (state === "NORMAL") color = "#14ca74";
-        else if (state === "WARNING") color = "#f0ad4e";
-        else if (state === "DANGER") color = "#d9534f";
-
-        chartArea.append("line")
-          .attr("x1", x(d.index))
-          .attr("x2", x(d.index))
-          .attr("y1", 0)
-          .attr("y2", chartHeight)
-          .attr("stroke", color)
-          .attr("stroke-width", 1)
-          .attr("stroke-opacity", 0.3);
-      });
-
-
-      svg.on("mousemove", function (event) {
+    // 3) 마우스 호버
+    const focus = area.append("g").style("display", "none");
+    const focusCircle = focus.append("circle").attr("r", 6).attr("fill", "black");
+    const focusText = focus.append("text")
+      .attr("x", 9)
+      .attr("dy", "-0.5em")
+      .style("font-size", "12px");
+    svg
+      .on("mousemove", (event) => {
+        const bisect = d3.bisector((d: any) => d.index).left;
         const mouseX = d3.pointer(event)[0] - margin.left;
         const x0 = x.invert(mouseX);
         const i = bisect(filteredData, x0);
@@ -140,21 +180,30 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
 
         if (selectedData) {
           focus.style("display", null);
-          focus.attr("transform", `translate(${x(selectedData.index)},${y(selectedData.value)})`);
-          focusText.text(`${selectedData.value.toFixed(4)}`);
+          focus.attr(
+            "transform",
+            `translate(${x(selectedData.index)},${y(selectedData[selectedGroup])})`
+          );
+          focusText.text(`${selectedData[selectedGroup].toFixed(4)}`);
         }
       })
-        .on("mouseover", () => focus.style("display", null))
-        .on("mouseout", () => focus.style("display", "none"));
-    });
-}, [dimensions, selectedGroup]);
-
+      .on("mouseover", () => focus.style("display", null))
+      .on("mouseout", () => focus.style("display", "none"));
+  }, [data, dim, selectedGroup]);
 
   return (
-    <div className={styles.lineChartContainer}>
-      <div
-        ref={chartRef}
-        style={{ width: '100%', height: '100%' }}
+    <div
+      className={styles.lineChartContainer}
+      style={{
+        position: "relative",
+        width: "100%"
+      }}
+      ref={containerRef}
+    >
+      {/* SVG는 항상 렌더링 */}
+      <svg
+        ref={svgRef}
+        style={{ display: "block", width: "100%", height: "100%" }}
       />
     </div>
   );

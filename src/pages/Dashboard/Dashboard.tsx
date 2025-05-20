@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import styles from './Dashboard.module.css';
 import { LineChart, LineCharts, StatusHeatmap, FeatureCheckBox  } from './components'
 import axios from 'axios';
+import { ToggleGroup } from './components/ToggleGroup/ToggleGroup';
 
 function Dashboard() {
 
@@ -41,12 +42,22 @@ function Dashboard() {
     voltageState: null as 'NORMAL' | 'WARNING' | 'DANGER' | null,
     temperatureState: null as 'NORMAL' | 'WARNING' | 'DANGER' | null,
   });
-
+  
+  const groups: string[] = ["pw", "u_totV", "t_3"];
   // 렌더링할 항목 선택 - LineChart
   const [selectedGroup1, setSelectedGroup1] = useState("pw");
 
   // 렌더링할 항목 선택 - ImpactChart
   const [selectedGroup2, setSelectedGroup2] = useState("voltagepower");
+
+  const setSelectedGroups = (value: string) => {
+    if (value == groups[2]) { // t_3일때만 temperature로 설정
+      setSelectedGroup2("temperature")
+    } else {
+      setSelectedGroup2("voltagepower")
+    }
+    setSelectedGroup1(value)
+  };
 
   // 각 그룹별 체크 항목
   const voltageFeatures = [
@@ -260,7 +271,13 @@ function Dashboard() {
           <div className={`${styles.card} ${styles.trend}`}>
             <div className={styles.cardHeader}>
               <div className={styles.cardTitle}>센서 데이터 및 상태 트렌드</div>
-              <select
+              <ToggleGroup
+                items={groups}
+                value={selectedGroup1}
+                onChange={(event) => setSelectedGroups(event)}
+                aria-label="Select data group"
+              />
+              {/* <select
                 className={styles.selectDropdown}
                 value={selectedGroup1}
                 onChange={(e) => setSelectedGroup1(e.target.value as "pw" | "u_totV" | "t_3")}
@@ -269,7 +286,7 @@ function Dashboard() {
                 {["pw", "u_totV", "t_3"].map((group) => (
                   <option key={group} value={group}>{group}</option>
                 ))}
-              </select>
+              </select> */}
               <button className={styles.excelDownloadButton} onClick={handleCsvDownload}>
                 <span className="material-icons" style={{ fontSize: '16px', marginRight: '6px' }}>download</span>
                 전체 데이터셋 다운로드
@@ -288,16 +305,16 @@ function Dashboard() {
         <div className={styles.cardHeader}>
           <div className={styles.cardTitle}>피처 영향도 분석</div>
 
-          <select
+          {/* <select
             className={styles.selectDropdown}
             value={selectedGroup2}
-            onChange={(e) => setSelectedGroup2(e.target.value as "voltagepower" | "temperature")}
+            onChange={(v) => setSelectedGroup2ByGroup1(v)}
             aria-label="Select data group"
           >
             {["voltagepower", "temperature"].map((group) => (
               <option key={group} value={group}>{group}</option>
             ))}
-          </select>
+          </select> */}
 
           <div className={styles.checkBoxContainer}>
             {featuresToRender.map((feature) => (
