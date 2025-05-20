@@ -196,7 +196,8 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
       className={styles.lineChartContainer}
       style={{
         position: "relative",
-        width: "100%"
+        width: "100%",
+        height: 300
       }}
       ref={containerRef}
     >
