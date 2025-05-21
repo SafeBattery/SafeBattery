@@ -57,9 +57,9 @@ const stateColor = (state?: string) => {
   }
 };
 
-const margin = { top: 20, right: 20, bottom: 30, left: 100 };
+const margin = { top: 20, right: 20, bottom: 30, left: 50 };
 
-function LineCharts({selectedGroup}: LineChartsProps) {
+function LineCharts({ selectedGroup }: LineChartsProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const { id } = useParams();
@@ -122,80 +122,83 @@ function LineCharts({selectedGroup}: LineChartsProps) {
     if (!containerRef.current || recordData.length === 0 || maskData.length === 0) {
       return;
     }
-    const N = recordData.length;      // 600
-    // 9
-    
-    // 차트 크기 설정
-    const margin = { top: 20, right: 20, bottom: 30, left: 40 };
+    const featureKeys = featureMap[selectedGroup].features;
+    const N = recordData.length;   // 600
+    const M = featureKeys.length;  // ex. 4
+    // 1) 고정 전체 높이 300px
+    const totalHeight = 300;
+    const innerHeight = totalHeight - margin.top - margin.bottom;
     const width = N - margin.left - margin.right;
-    const height = 80 - margin.top - margin.bottom;
-    
-    // container 비우기
-    const container = d3.select(containerRef.current);
-    
-    // (1) 마운트 시: 기존 contents 제거 후 그리기
-    container.selectAll("*").remove();
+    // 2) bandH 를 innerHeight / M 으로 분배
+    const bandH = innerHeight / M;
+    const height = M * bandH;
+
+    const xScale = d3.scaleLinear().domain([0, N - 1]).range([0, width]);
+    const series = recordData.map(d => +d[selectedGroup]);
+    const yExtent = d3.extent(series) as [number, number];
+    const yScale = d3.scaleLinear()
+      .domain(yExtent)      // [min, max]
+      .nice()               // 보기 좋은 tick으로 조정
+      .range([innerHeight, 0]);
+  
     d3.select(containerRef.current).selectAll("*").remove();
-    console.log("drawed", selectedGroup);
+    const svg = d3.select(containerRef.current)
+    .selectAll("svg").data([0]).join("svg")
+      .attr("width", width + margin.left + margin.right + 60)  // 오른쪽 레이블 공간 추가
+      .attr("height", totalHeight)
+    .selectAll("g").data([0]).join("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`)
 
-    // x, y 스케일
-    const xScale = d3.scaleLinear()
-      .domain([0, N - 1])
-      .range([0, width]);
+    // 히트맵 그리기 (기존과 동일)
+    for (let j = 0; j < N; j++) {
+      const x = xScale(j);
+      const w = xScale(j + 1) - xScale(j);
+      for (let i = 0; i < M; i++) {
+        svg.append("rect")
+          .attr("x", x)
+          .attr("y", i * bandH)
+          .attr("width", w)
+          .attr("height", bandH)
+          .attr("fill", maskData[j][i] >= 0.5
+            ? "rgba(220,20,60,0.5)"
+            : "rgba(20,200,100,0.5)");
+      }
+    }
 
-    featureMap[selectedGroup].features.forEach((key, i) => {
-      const series = recordData.map(d => +d[selectedGroup]);
-      const [minV, maxV] = d3.extent(series) as [number, number];
-      const pad = (maxV - minV) * 0.1;
-      const y0 = Math.max(0, minV - pad);
-      const y1 = Math.min(1, maxV + pad);
-      const yScale = d3.scaleLinear().domain([y0, y1]).range([height, 0]);
+    // X축
+    svg.append("g")
+      .attr("transform", `translate(0,${innerHeight})`)
+      .call(d3.axisBottom(xScale).ticks(6));
 
-      const svg = d3.select(containerRef.current)
-        .append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
-
-      // mask background
-      const barW = xScale(1) - xScale(0);
-      svg.selectAll("rect")
-        .data(maskData)
-        .enter()
-        .append("rect")
-        .attr("x", (_d, j) => xScale(j))
-        .attr("width", barW)
-        .attr("height", height)
-        .attr("fill", d => d[i] >= 0.5 ? "red" : "green")
-        .attr("opacity", 0.3);
-
-      // line
-      const line = d3.line<number>()
-        .x((_, j) => xScale(j))
-        .y(d => yScale(d));
-      svg.append("path")
-        .datum(series)
-        .attr("fill", "none")
-        .attr("stroke", "steelblue")
-        .attr("stroke-width", 1.5)
-        .attr("d", line);
-
-      // axes
-      svg.append("g")
-        .attr("transform", `translate(0,${height})`)
-        .call(d3.axisBottom(xScale).ticks(6));
-      svg.append("g")
-        .call(d3.axisLeft(yScale).ticks(3));
-
-      // label
-      svg.append("text")
-        .attr("x", width - 5)
-        .attr("y", 15)
-        .attr("text-anchor", "end")
+    // Y 레이블
+    // 왼쪽 숫자 Y축
+    svg.append("g")
+      .call(d3.axisLeft(yScale));
+    // 오른쪽 피처 레이블
+    const labelX = width + 10;  // margin left를 제외한 내부 width 끝에서 +10px
+    const labels = svg.append("g")
+      .attr("class", "feature-labels");
+    featureKeys.forEach((key, i) => {
+      labels.append("text")
+        .attr("x", labelX)
+        .attr("y", i * bandH + bandH / 2)
+        .attr("dy", "0.35em")
+        .attr("text-anchor", "start")
         .style("font-size", "12px")
         .text(key);
     });
+    
+    // **단 한 번의 라인**: recordData[selectedGroup]
+    const line = d3.line<number>()
+      .x((_, j) => xScale(j))
+      .y(d => yScale(d));
+
+    svg.append("path")
+      .datum(series)
+      .attr("fill", "none")
+      .attr("stroke", "navy")
+      .attr("stroke-width", 2)
+      .attr("d", line);
   }, [recordData, maskData, selectedGroup]);
   return (
     <div ref={containerRef}
