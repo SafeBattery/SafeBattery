@@ -1,4 +1,3 @@
-// LineChart.tsx
 import * as d3 from "d3";
 import React, { useRef, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -13,18 +12,17 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // 원본 데이터
   const [data, setData] = useState<any[] | null>(null);
-  // 컨테이너 크기
   const [dim, setDim] = useState({ width: 0, height: 0 });
+  const [transform, setTransform] = useState<d3.ZoomTransform>(d3.zoomIdentity);
 
-  // ─── 한 번만: 컨테이너 크기 관찰 ─────────────────────
+  const margin = { top: 20, right: 50, bottom: 30, left: 50 };
+
   useEffect(() => {
     if (!containerRef.current) return;
     const ro = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;
-      // 변화폭이 작으면 무시
-      setDim((prev) =>
+      setDim(prev =>
         Math.abs(prev.width - width) > 1 || Math.abs(prev.height - height) > 1
           ? { width, height }
           : prev
@@ -34,172 +32,183 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
     return () => ro.disconnect();
   }, []);
 
-  // ─── id 또는 selectedGroup 바뀔 때만 fetch ───────────────
   useEffect(() => {
     if (!id) return;
-    setData(null); // 스켈레톤 표시
+    setData(null);
     fetch(`http://localhost:8080/api/pemfc/${id}/record/recent600`)
-      .then((res) => res.json())
-      .then((arr) => {
+      .then(res => res.json())
+      .then(arr => {
         if (Array.isArray(arr)) setData(arr.reverse());
       })
       .catch(console.error);
-    console.log("fetched");
   }, [id, selectedGroup]);
 
-  // ─── data, dim, selectedGroup 모두 준비되면 차트 draw ───────
+  useEffect(() => {
+    if (!svgRef.current || dim.width === 0 || dim.height === 0) return;
+
+    const svg = d3.select(svgRef.current);
+
+    const zoomed = (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
+      setTransform(event.transform);
+    };
+
+    const zoomBehavior = d3.zoom<SVGSVGElement, unknown>()
+      .scaleExtent([1, 10])
+      .translateExtent([[0, 0], [dim.width, dim.height]])
+      .extent([[0, 0], [dim.width, dim.height]])
+      .on("zoom", zoomed);
+
+    svg.call(zoomBehavior);
+    svg.call(zoomBehavior.transform, d3.zoomIdentity);
+
+    return () => {
+      svg.on(".zoom", null);
+    };
+  }, [dim, data]);
+
   useEffect(() => {
     if (!data || dim.width === 0 || dim.height === 0) return;
 
-    const margin = { top: 20, right: 50, bottom: 20, left: 40 };
-    const W = dim.width - margin.left - margin.right;
-    const H = dim.height - margin.top - margin.bottom;
-
-    const svg = d3
-      .select(svgRef.current!)
-      .attr("viewBox", `0 0 ${dim.width} ${dim.height}`)
-      .attr("preserveAspectRatio", "none");
-
+    const svg = d3.select(svgRef.current!);
     svg.selectAll("*").remove();
 
-    const area = svg
-      .append("g")
+    const width = dim.width - margin.left - margin.right;
+    const height = dim.height - margin.top - margin.bottom;
+
+    const chartArea = svg.append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`)
+      .attr("clip-path", "url(#clip)");
+
+    svg.append("defs").append("clipPath")
+      .attr("id", "clip")
+      .append("rect")
+      .attr("width", width)
+      .attr("height", height);
+
+    const axisArea = svg.append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // x, y 스케일
     const N = data.length;
-    const x = d3
-      .scaleLinear()
-      .domain([0, N - 1])
-      .range([0, W]);
-    const values = data.map((d, i) => +d[selectedGroup]);
-    const y = d3
-      .scaleLinear()
-      .domain(d3.extent(values) as [number, number])
-      .nice()
-      .range([H, 0]);
+    const xBase = d3.scaleLinear().domain([0, N - 1]).range([0, width]);
+    const x = transform.rescaleX(xBase);
+    const values = data.map(d => +d[selectedGroup]);
+    const y = d3.scaleLinear().domain(d3.extent(values) as [number, number]).nice().range([height, 0]);
 
-    // X축
-    area
-      .append("g")
-      .attr("transform", `translate(0,${H})`)
-      .call(d3.axisBottom(x).tickSize(-H).tickPadding(10))
-      .selectAll("line")
-      .attr("stroke", "#ddd");
+    axisArea.append("g")
+      .attr("transform", `translate(0,${height})`)
+      .call(d3.axisBottom(x).tickSize(-height).tickPadding(10))
+      .selectAll("line").attr("stroke", "#ddd");
 
-    // Y축
-    area
-      .append("g")
-      .call(d3.axisLeft(y).tickSize(-W).tickPadding(10))
-      .selectAll("line")
-      .attr("stroke", "#ddd");
+    axisArea.append("g")
+      .call(d3.axisLeft(y).tickSize(-width).tickPadding(10))
+      .selectAll("line").attr("stroke", "#ddd");
 
-
-    // 2) 사각형 그리기
     const stateFieldMap: Record<string, string> = {
-      pw: "powerState",
-      u_totV: "voltageState",
-      t_3: "temperatureState",
+      pw: "powerState", u_totV: "voltageState", t_3: "temperatureState",
     };
-    const stateField = stateFieldMap[selectedGroup];
 
-    // 2-1) 데이터와 state를 함께 묶어서 배열 생성
-    const filteredData = data.map((d, i) => {
-      return { ...d, index: i };
-    });
-    const stateLines = filteredData.map((d) => ({
+    const filteredData = data.map((d, i) => ({ ...d, index: i }));
+    const stateLines = filteredData.map(d => ({
       index: d.index,
-      state: d[stateField] as
-        | "NORMAL"
-        | "WARNING"
-        | "ERROR" 
-        | undefined,
+      state: d[stateFieldMap[selectedGroup]] as string
     }));
 
-    // 2-2) 색상 함수
-    const stateColor = (s: string | undefined) => {
-      if (s === "NORMAL") return "#14ca74";
-      if (s === "WARNING") return "#f0ad4e";
-      if (s === "ERROR") return "#d9534f";
-      return "#ccc";
-    };
-    const svgWidth = dim.width;
-    const svgHeight = dim.height;
+    const stateColor = (s: string | undefined) =>
+      s === "NORMAL" ? "#14ca74" : s === "WARNING" ? "#f0ad4e" : s === "ERROR" ? "#d9534f" : "#ccc";
 
-    // SVG 전체 크기에서 좌우 마진을 뺀 값이 바로 chartWidth
-    const chartWidth = svgWidth - margin.left - margin.right;
-    const chartHeight = svgHeight - margin.top - margin.bottom;
-    // 2-3) 수직선 그리기
-    area
-      .selectAll("line.state")
+    chartArea.selectAll("line.state")
       .data(stateLines)
       .join("line")
-      .attr("class", "state")
-      .attr("x1", (d) => x(d.index))
-      .attr("x2", (d) => x(d.index))
+      .attr("x1", d => x(d.index))
+      .attr("x2", d => x(d.index))
       .attr("y1", 0)
-      .attr("y2", chartHeight)
-      .attr("stroke", (d) => stateColor(d.state))
+      .attr("y2", height)
+      .attr("stroke", d => stateColor(d.state))
       .attr("stroke-width", 1)
       .attr("stroke-opacity", 0.15);
 
-    // 라인
-    const lineGen = d3
-      .line<number>()
+    const lineGen = d3.line<number>()
       .x((_, i) => x(i))
-      .y((d) => y(d));
+      .y(d => y(d));
 
-    area
-      .append("path")
+    chartArea.append("path")
       .datum(values)
       .attr("fill", "none")
-      .attr(
-        "stroke",
-        d3.schemeSet2[["pw", "u_totV", "t_3"].indexOf(selectedGroup)]
-      )
+      .attr("stroke", d3.schemeSet2[["pw", "u_totV", "t_3"].indexOf(selectedGroup)])
       .attr("stroke-width", 3)
       .attr("d", lineGen);
-    console.log("rendered", data);
 
-    // 3) 마우스 호버
-    const focus = area.append("g").style("display", "none");
-    const focusCircle = focus.append("circle").attr("r", 6).attr("fill", "black");
-    const focusText = focus.append("text")
-      .attr("x", 9)
-      .attr("dy", "-0.5em")
-      .style("font-size", "12px");
-    svg
-      .on("mousemove", (event) => {
-        const bisect = d3.bisector((d: any) => d.index).left;
-        const mouseX = d3.pointer(event)[0] - margin.left;
-        const x0 = x.invert(mouseX);
-        const i = bisect(filteredData, x0);
-        const selectedData = filteredData[i];
+    const focusGroup = chartArea.append("g").style("display", "none");
 
-        if (selectedData) {
-          focus.style("display", null);
-          focus.attr(
-            "transform",
-            `translate(${x(selectedData.index)},${y(selectedData[selectedGroup])})`
-          );
-          focusText.text(`${selectedData[selectedGroup].toFixed(4)}`);
-        }
+    const verticalLine = focusGroup.append("line")
+      .attr("y1", 0).attr("y2", height)
+      .attr("stroke", "gray").attr("stroke-dasharray", "3 3").attr("stroke-width", 1);
+
+    const horizontalLine = focusGroup.append("line")
+      .attr("x1", 0).attr("x2", width)
+      .attr("stroke", "gray").attr("stroke-dasharray", "3 3").attr("stroke-width", 1);
+
+    const labelGroup = svg.append("g").style("display", "none");
+
+    const xLabel = labelGroup.append("text")
+      .attr("fill", "#333")
+      .attr("font-size", "12px")
+      .attr("text-anchor", "middle");
+
+    const yLabel = labelGroup.append("text")
+      .attr("fill", "#333")
+      .attr("font-size", "12px")
+      .attr("text-anchor", "end");
+
+    svg.on("mousemove", (event) => {
+      const [mx, my] = d3.pointer(event);
+      const mouseX = mx - margin.left;
+
+      const x0 = x.invert(mouseX);
+      const i = d3.bisector((d: any) => d.index).left(filteredData, x0);
+      const d = filteredData[i];
+      if (!d) return;
+
+      const cx = x(d.index);
+      const cy = y(d[selectedGroup]);
+
+      focusGroup.style("display", null);
+      labelGroup.style("display", null);
+
+      verticalLine.attr("x1", cx).attr("x2", cx);
+      horizontalLine.attr("y1", cy).attr("y2", cy);
+
+      xLabel
+        .attr("x", cx + margin.left)
+        .attr("y", height + margin.top + 18)
+        .attr("font-size", 10)
+        .attr("font-weight", 900)
+        .text(`${d.index}`);
+        
+
+      yLabel
+        .attr("x", margin.left - 8)
+        .attr("y", cy + margin.top + 4)
+        .attr("font-size", 10)
+        .attr("font-weight", 900)
+        .text(d[selectedGroup].toFixed(4))
+    })
+      .on("mouseover", () => {
+        focusGroup.style("display", null);
+        labelGroup.style("display", null);
       })
-      .on("mouseover", () => focus.style("display", null))
-      .on("mouseout", () => focus.style("display", "none"));
-  }, [data, dim, selectedGroup]);
+      .on("mouseout", () => {
+        focusGroup.style("display", "none");
+        labelGroup.style("display", "none");
+      });
+  }, [data, dim, selectedGroup, transform]);
 
   return (
     <div
       className={styles.lineChartContainer}
-      style={{
-        position: "relative",
-        width: "100%",
-        height: 300
-      }}
+      style={{ position: "relative", width: "100%", height: 300 }}
       ref={containerRef}
     >
-      {/* SVG는 항상 렌더링 */}
       <svg
         ref={svgRef}
         style={{ display: "block", width: "100%", height: "100%" }}
