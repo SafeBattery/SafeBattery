@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './Dashboard.module.css';
-import { LineChart, LineCharts, FeatureCheckBox, ImpactHeatmap  } from './components'
+import { LineChart, LineCharts, FeatureCheckBox, ImpactHeatmap } from './components'
 import axios from 'axios';
 import { ToggleGroup } from './components/ToggleGroup/ToggleGroup';
 
@@ -14,7 +14,7 @@ function Dashboard() {
   // 시작 화면
   const navigate = useNavigate();
   const handleHomeClick = () => {
-    navigate("/"); 
+    navigate("/");
   };
 
   // 시간 카드
@@ -42,7 +42,7 @@ function Dashboard() {
     voltageState: null as 'NORMAL' | 'WARNING' | 'DANGER' | null,
     temperatureState: null as 'NORMAL' | 'WARNING' | 'DANGER' | null,
   });
-  
+
   const groups: string[] = ["pw", "u_totV", "t_3"];
   // 렌더링할 항목 선택 - LineChart
   const [selectedGroup1, setSelectedGroup1] = useState("pw");
@@ -102,7 +102,7 @@ function Dashboard() {
         console.error("CSV 다운로드 실패:", error);
       });
   };
-  
+
   // 모델명 API 호출
   useEffect(() => {
     if (!id) return;
@@ -118,49 +118,49 @@ function Dashboard() {
 
   // 시간 업데이트
   useEffect(() => {
-    const interval = setInterval(() => {setCurrentTime(new Date());}, 1000);
+    const interval = setInterval(() => { setCurrentTime(new Date()); }, 1000);
     return () => clearInterval(interval);
   }, []);
 
   // 최근 센서 데이터 API 호출
   useEffect(() => {
-  if (!id) return;
+    if (!id) return;
 
-  axios.get(`http://localhost:8080/api/pemfc/${id}/record/recent600`)
-    .then(response => {
-      console.log(`http://localhost:8080/api/pemfc/${id}/record/recent600 API가 정상적으로 호출됐습니다`);
+    axios.get(`http://localhost:8080/api/pemfc/${id}/record/recent600`)
+      .then(response => {
+        console.log(`http://localhost:8080/api/pemfc/${id}/record/recent600 API가 정상적으로 호출됐습니다`);
 
-      const data = response.data;
-      if (Array.isArray(data) && data.length > 0) {
-        const last = data[0];
+        const data = response.data;
+        if (Array.isArray(data) && data.length > 0) {
+          const last = data[0];
 
-        setLatestValues({
-          pw: last.pw,
-          u_totV: last.u_totV,
-          t_3: last.t_3,
-          powerState: last.powerState,
-          voltageState: last.voltageState,
-          temperatureState: last.temperatureState
-        });
-      }
-    })
-    .catch(error => {
-      console.error("API 호출 실패:", error);
-    });
+          setLatestValues({
+            pw: last.pw,
+            u_totV: last.u_totV,
+            t_3: last.t_3,
+            powerState: last.powerState,
+            voltageState: last.voltageState,
+            temperatureState: last.temperatureState
+          });
+        }
+      })
+      .catch(error => {
+        console.error("API 호출 실패:", error);
+      });
   }, [id]);
 
   const [selectedFeatures, setSelectedFeatures] = React.useState<string[]>([]);
 
 
   function toggleFeature(feature: string) {
-  setSelectedFeatures(prev => {
-    if (prev.includes(feature)) {
-      return prev.filter(f => f !== feature); // 체크 해제 시 배열에서 제거
-    } else {
-      return [...prev, feature]; // 체크 시 배열에 추가
-    }
-  });
-}
+    setSelectedFeatures(prev => {
+      if (prev.includes(feature)) {
+        return prev.filter(f => f !== feature); // 체크 해제 시 배열에서 제거
+      } else {
+        return [...prev, feature]; // 체크 시 배열에 추가
+      }
+    });
+  }
 
   const featuresToRender =
     selectedGroup2 === "voltagepower" ? voltageFeatures : temperatureFeatures;
@@ -186,18 +186,18 @@ function Dashboard() {
             cursor: 'pointer'
           }}
           onClick={handleHomeClick}
-          >
+        >
           home
         </span>
       </div>
       <main className={styles.body}>
         <div className={`${styles.cardSection} ${styles.now}`}>
-          
+
           {/* {시간 카드} */}
           <div className={`${styles.card} ${styles.time}`}>
             <div className={styles.timeContent}>
               <div className={styles.timeDate}>{formatDate(currentTime)}</div>
-              <div className={styles.timeTime}>{formatTime(currentTime)}</div> 
+              <div className={styles.timeTime}>{formatTime(currentTime)}</div>
             </div>
           </div>
 
@@ -212,8 +212,8 @@ function Dashboard() {
                     latestValues.powerState === 'DANGER'
                       ? '#d9534f'
                       : latestValues.powerState === 'WARNING'
-                      ? '#f0ad4e'
-                      : '#14ca74',
+                        ? '#f0ad4e'
+                        : '#14ca74',
                 }}
               ></div>
               <div className={styles.powerValue}>
@@ -233,8 +233,8 @@ function Dashboard() {
                     latestValues.voltageState === 'DANGER'
                       ? '#d9534f'
                       : latestValues.voltageState === 'WARNING'
-                      ? '#f0ad4e'
-                      : '#14ca74',
+                        ? '#f0ad4e'
+                        : '#14ca74',
                 }}
               ></div>
               <div className={styles.voltageValue}>
@@ -254,8 +254,8 @@ function Dashboard() {
                     latestValues.temperatureState === 'DANGER'
                       ? '#d9534f'
                       : latestValues.temperatureState === 'WARNING'
-                      ? '#f0ad4e'
-                      : '#14ca74',
+                        ? '#f0ad4e'
+                        : '#14ca74',
                 }}
               ></div>
               <div className={styles.temperatureValue}>
@@ -299,13 +299,13 @@ function Dashboard() {
             </div>
           </div>
 
-        {/* 센서 상태 트렌드 */}
-        <div className={`${styles.card} ${styles.dynamask}`}>
-          <div className={`${styles.card} ${styles.trend}`}>
-        <div className={styles.cardHeader}>
-          <div className={styles.cardTitle}>피처 영향도 분석</div>
+          {/* 센서 상태 트렌드 */}
+          <div className={`${styles.card} ${styles.dynamask}`}>
+            <div className={`${styles.card} ${styles.trend}`}>
+              <div className={styles.cardHeader}>
+                <div className={styles.cardTitle}>피처 영향도 분석</div>
 
-          {/* <select
+                {/* <select
             className={styles.selectDropdown}
             value={selectedGroup2}
             onChange={(v) => setSelectedGroup2ByGroup1(v)}
@@ -315,7 +315,7 @@ function Dashboard() {
               <option key={group} value={group}>{group}</option>
             ))}
           </select> */}
-
+                {/* 
           <div className={styles.checkBoxContainer}>
             {featuresToRender.map((feature) => (
               <FeatureCheckBox
@@ -325,28 +325,29 @@ function Dashboard() {
                 onChange={() => toggleFeature(feature)}
               />
             ))}
+          </div> */}
+              </div>
+
+              <LineCharts selectedGroup={selectedGroup1} />
+              {/* 조건부 차트 렌더링 */}
+              {/* {selectedGroup2 === "voltagepower" && (
+                <>
+                  <LineCharts selectedGroup="pw" selectedFeatures={selectedFeatures} />}
+                  <LineCharts selectedGroup="u_totV" selectedFeatures={selectedFeatures} />}
+                  <ImpactHeatmap selectedGroup="voltagepower" />
+                </>
+              )}
+              {selectedGroup2 === "temperature" && (
+                <>
+                  <LineCharts selectedGroup={selectedGroup1} />
+                  <ImpactHeatmap selectedGroup="temperature" />
+                </>
+              )} */}
+            </div>
           </div>
         </div>
-
-        {/* 조건부 차트 렌더링 */}
-        {selectedGroup2 === "voltagepower" && (
-          <>
-            <LineCharts selectedGroup="pw" selectedFeatures={selectedFeatures} />
-            <LineCharts selectedGroup="u_totV" selectedFeatures={selectedFeatures} />
-            <ImpactHeatmap selectedGroup="voltagepower" />
-          </>
-        )}
-        {selectedGroup2 === "temperature" && (
-          <>
-            <LineCharts selectedGroup="t_3" selectedFeatures={selectedFeatures}/>
-            <ImpactHeatmap selectedGroup="temperature" />
-          </>
-        )}
-      </div>
-    </div>
-    </div>
-    </main>
-  </>
+      </main>
+    </>
   )
 }
 
