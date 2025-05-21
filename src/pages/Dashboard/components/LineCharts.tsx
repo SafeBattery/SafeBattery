@@ -38,7 +38,7 @@ const featureMap: Record<string, { apiPath: string; features: string[] }> = {
   },
   t_3: {
     apiPath: "temperature",
-    features: ["P_H2_inlet", "P_Air_inlet", "T_Heater", "T_Stack_inlet"],
+    features: ["p_H2_inlet", "p_Air_inlet", "t_Heater", "t_Stack_inlet"],
   },
 };
 
@@ -126,7 +126,7 @@ function LineCharts({selectedGroup}: LineChartsProps) {
     // 9
     
     // 차트 크기 설정
-    const margin = { top: 20, right: 20, bottom: 30, left: 40 };
+    const margin = { top: 10, right: 20, bottom: 20, left: 40 };
     const width = N - margin.left - margin.right;
     const height = 80 - margin.top - margin.bottom;
     
@@ -142,9 +142,10 @@ function LineCharts({selectedGroup}: LineChartsProps) {
     const xScale = d3.scaleLinear()
       .domain([0, N - 1])
       .range([0, width]);
+    console.log(recordData)
 
     featureMap[selectedGroup].features.forEach((key, i) => {
-      const series = recordData.map(d => +d[selectedGroup]);
+      const series = recordData.map(d => +d[key]);
       const [minV, maxV] = d3.extent(series) as [number, number];
       const pad = (maxV - minV) * 0.1;
       const y0 = Math.max(0, minV - pad);
