@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './Dashboard.module.css';
-import { LineChart, LineCharts, StatusHeatmap, FeatureCheckBox  } from './components'
+import { LineChart, LineCharts, FeatureCheckBox, ImpactHeatmap  } from './components'
 import axios from 'axios';
 import { ToggleGroup } from './components/ToggleGroup/ToggleGroup';
 
@@ -126,13 +126,13 @@ function Dashboard() {
   useEffect(() => {
   if (!id) return;
 
-  axios.get(`http://localhost:8080/api/pemfc/${id}/record/all`)
+  axios.get(`http://localhost:8080/api/pemfc/${id}/record/recent600`)
     .then(response => {
-      console.log(`http://localhost:8080/api/pemfc/${id}/record/all API가 정상적으로 호출됐습니다`);
+      console.log(`http://localhost:8080/api/pemfc/${id}/record/recent600 API가 정상적으로 호출됐습니다`);
 
       const data = response.data;
       if (Array.isArray(data) && data.length > 0) {
-        const last = data[data.length - 1];
+        const last = data[0];
 
         setLatestValues({
           pw: last.pw,
@@ -301,7 +301,7 @@ function Dashboard() {
 
         {/* 센서 상태 트렌드 */}
         <div className={`${styles.card} ${styles.dynamask}`}>
-      <div className={`${styles.card} ${styles.trend}`}>
+          <div className={`${styles.card} ${styles.trend}`}>
         <div className={styles.cardHeader}>
           <div className={styles.cardTitle}>피처 영향도 분석</div>
 
@@ -333,14 +333,18 @@ function Dashboard() {
           <>
             <LineCharts selectedGroup="pw" selectedFeatures={selectedFeatures} />
             <LineCharts selectedGroup="u_totV" selectedFeatures={selectedFeatures} />
+            <ImpactHeatmap selectedGroup="voltagepower" />
           </>
         )}
         {selectedGroup2 === "temperature" && (
-          <LineCharts selectedGroup="t_3" selectedFeatures={selectedFeatures}/>
+          <>
+            <LineCharts selectedGroup="t_3" selectedFeatures={selectedFeatures}/>
+            <ImpactHeatmap selectedGroup="temperature" />
+          </>
         )}
       </div>
     </div>
-      </div>
+    </div>
     </main>
   </>
   )

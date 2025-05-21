@@ -94,23 +94,6 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
       .selectAll("line")
       .attr("stroke", "#ddd");
 
-    // 라인
-    const lineGen = d3
-      .line<number>()
-      .x((_, i) => x(i))
-      .y((d) => y(d));
-
-    area
-      .append("path")
-      .datum(values)
-      .attr("fill", "none")
-      .attr(
-        "stroke",
-        d3.schemeSet2[["pw", "u_totV", "t_3"].indexOf(selectedGroup)]
-      )
-      .attr("stroke-width", 3)
-      .attr("d", lineGen);
-    console.log("rendered", data);
 
     // 2) 사각형 그리기
     const stateFieldMap: Record<string, string> = {
@@ -124,17 +107,14 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
     const filteredData = data.map((d, i) => {
       return { ...d, index: i };
     });
-    const stateLines = filteredData.map((d) => {
-      const original = data[data.length - 1 - d.index]; // reverse 보정
-      return {
-        index: d.index,
-        state: original?.[stateField] as
-          | "NORMAL"
-          | "WARNING"
-          | "ERROR"
-          | undefined,
-      };
-    });
+    const stateLines = filteredData.map((d) => ({
+      index: d.index,
+      state: d[stateField] as
+        | "NORMAL"
+        | "WARNING"
+        | "ERROR" 
+        | undefined,
+    }));
 
     // 2-2) 색상 함수
     const stateColor = (s: string | undefined) => {
@@ -162,6 +142,24 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
       .attr("stroke", (d) => stateColor(d.state))
       .attr("stroke-width", 1)
       .attr("stroke-opacity", 0.15);
+
+    // 라인
+    const lineGen = d3
+      .line<number>()
+      .x((_, i) => x(i))
+      .y((d) => y(d));
+
+    area
+      .append("path")
+      .datum(values)
+      .attr("fill", "none")
+      .attr(
+        "stroke",
+        d3.schemeSet2[["pw", "u_totV", "t_3"].indexOf(selectedGroup)]
+      )
+      .attr("stroke-width", 3)
+      .attr("d", lineGen);
+    console.log("rendered", data);
 
     // 3) 마우스 호버
     const focus = area.append("g").style("display", "none");
