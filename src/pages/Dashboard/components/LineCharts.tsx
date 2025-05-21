@@ -160,9 +160,20 @@ function LineCharts({ selectedGroup }: LineChartsProps) {
         .append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
+      // 바운더리 설정
+      svg.append("defs")
+        .append("clipPath")
+        .attr("id", `clip-${i}`)       // i는 feature index
+        .append("rect")
+        .attr("width", width)
+        .attr("height", height);
+      const content = svg.append("g")
+        .attr("class", "content")
+        .attr("clip-path", `url(#clip-${i})`);
+
       // mask background
       const barW = xScale(1) - xScale(0);
-      svg.selectAll("rect")
+      content.selectAll("rect")
         .data(maskData)
         .enter()
         .append("rect")
@@ -177,7 +188,7 @@ function LineCharts({ selectedGroup }: LineChartsProps) {
       const line = d3.line<number>()
         .x((_, j) => xScale(j))
         .y(d => yScale(d));
-      svg.append("path")
+      content.append("path")
         .datum(series)
         .attr("class", `line feature-${i}`)
         .attr("fill", "none")
@@ -187,6 +198,7 @@ function LineCharts({ selectedGroup }: LineChartsProps) {
 
       // axes
       svg.append("g")
+        .attr("class", "x-axis")
         .attr("transform", `translate(0,${height})`)
         .call(d3.axisBottom(xScale).ticks(6));
       svg.append("g")
@@ -259,6 +271,9 @@ function LineCharts({ selectedGroup }: LineChartsProps) {
           content.selectAll<SVGLineElement, { index: number }>(".state-line")
             .attr("x1", d => newX(d.index))
             .attr("x2", d => newX(d.index));
+          content.select<SVGGElement>(".x-axis")
+            .attr("x", (_d, j) => newX(j))
+            .attr("width", (_d, j) => newX(j + 1) - newX(j));
         });
     }
 
@@ -272,6 +287,15 @@ function LineCharts({ selectedGroup }: LineChartsProps) {
     d3.selectAll<SVGSVGElement, unknown>("svg.chart")
       .call(zoomBehavior)
       .call(zoomBehavior.transform, d3.zoomIdentity);
+    const charts = d3.selectAll<SVGSVGElement, unknown>("svg.chart")
+      .call(zoomBehavior);
+
+    // 3) 새로고침(마운트) 시 한번만, 예컨대 2배 줌인
+    const initialScale = 6;
+    charts.call(
+      zoomBehavior.transform,
+      d3.zoomIdentity.translate(-width*(initialScale-1),0).scale(initialScale),
+    );
   }, [recordData, maskData, selectedGroup]);
   return (
     <div ref={containerRef}
