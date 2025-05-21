@@ -253,8 +253,8 @@ body {
 .cardSection.history .card.dynamask {
   flex: 0 1 calc((100vw - 72px) * 0.5) !important;
   max-width: calc((100vw - 72px) * 0.5);
-  max-height: 375px;
-  height: 375px;
+  /* max-height: 375px; */
+  /* height: 375px; */
   background: #fff; 
   border-radius: 25px;
   padding: 24px;

@@ -83,7 +83,8 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
       .attr("id", "clip")
       .append("rect")
       .attr("width", width)
-      .attr("height", height);
+      .attr("height", height)
+      .transition().style("duration", "0");
 
     const axisArea = svg.append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
@@ -206,7 +207,7 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
   return (
     <div
       className={styles.lineChartContainer}
-      style={{ position: "relative", width: "100%", height: 300 }}
+      style={{ position: "relative", width: "100%", height: "95%" }}
       ref={containerRef}
     >
       <svg
