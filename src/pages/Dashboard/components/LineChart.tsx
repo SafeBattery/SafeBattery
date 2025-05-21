@@ -1,28 +1,60 @@
 import * as d3 from "d3";
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import styles from "../Dashboard.module.css";
 
 interface LineChartProps {
-  selectedGroup: string;
+  selectedGroup: "pw" | "u_totV" | "t_3";
 }
+
+interface RecordPoint {
+  [key: string]: any;
+}
+
+interface PredictionPoint {
+  predictedValue: number;
+  state: string;
+}
+
+const predictionApiMap = {
+  pw: "power",
+  u_totV: "voltage",
+  t_3: "temperature",
+} as const;
+
+const stateFieldMap = {
+  pw: "powerState",
+  u_totV: "voltageState",
+  t_3: "temperatureState",
+} as const;
+
+const stateColor = (state?: string) =>
+  state === "NORMAL"
+    ? "#14ca74"
+    : state === "WARNING"
+    ? "#f0ad4e"
+    : state === "ERROR"
+    ? "#d9534f"
+    : "#ccc";
+
+const margin = { top: 20, right: 50, bottom: 30, left: 50 };
 
 export default function LineChart({ selectedGroup }: LineChartProps) {
   const { id } = useParams<{ id: string }>();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [data, setData] = useState<any[] | null>(null);
+  const [data, setData] = useState<RecordPoint[] | null>(null);
+  const [predictionData, setPredictionData] = useState<PredictionPoint[] | null>(null);
   const [dim, setDim] = useState({ width: 0, height: 0 });
   const [transform, setTransform] = useState<d3.ZoomTransform>(d3.zoomIdentity);
 
-  const margin = { top: 20, right: 50, bottom: 30, left: 50 };
-
+  // Resize Observer for responsive layout
   useEffect(() => {
     if (!containerRef.current) return;
     const ro = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;
-      setDim(prev =>
+      setDim((prev) =>
         Math.abs(prev.width - width) > 1 || Math.abs(prev.height - height) > 1
           ? { width, height }
           : prev
@@ -32,17 +64,42 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
     return () => ro.disconnect();
   }, []);
 
+  // Fetch recent record data
   useEffect(() => {
     if (!id) return;
     setData(null);
+
     fetch(`http://localhost:8080/api/pemfc/${id}/record/recent600`)
-      .then(res => res.json())
-      .then(arr => {
+      .then((res) => res.json())
+      .then((arr) => {
         if (Array.isArray(arr)) setData(arr.reverse());
+      })
+      .catch(console.error);
+  }, [id]);
+
+  // Fetch prediction data
+  useEffect(() => {
+    if (!id) return;
+
+    const endpoint = predictionApiMap[selectedGroup];
+    setPredictionData(null);
+
+    fetch(`http://localhost:8080/api/pemfc/${id}/predictions/${endpoint}`)
+      .then((res) => res.json())
+      .then((arr) => {
+        if (Array.isArray(arr)) {
+          setPredictionData(
+            arr.map((d: any) => ({
+              predictedValue: +d.predictedValue,
+              state: d.state,
+            }))
+          );
+        }
       })
       .catch(console.error);
   }, [id, selectedGroup]);
 
+  // Zoom behavior setup
   useEffect(() => {
     if (!svgRef.current || dim.width === 0 || dim.height === 0) return;
 
@@ -52,157 +109,239 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
       setTransform(event.transform);
     };
 
-    const zoomBehavior = d3.zoom<SVGSVGElement, unknown>()
+    const zoomBehavior = d3
+      .zoom<SVGSVGElement, unknown>()
       .scaleExtent([1, 10])
-      .translateExtent([[0, 0], [dim.width, dim.height]])
-      .extent([[0, 0], [dim.width, dim.height]])
-      .on("zoom", zoomed);
+      .translateExtent([
+        [0, 0],
+        [dim.width, dim.height],
+      ])
+      .extent([
+        [0, 0],
+        [dim.width, dim.height],
+      ])
+      .on("zoom", zoomed)
+      .filter((event) => !event.button); // prevent right-click zoom
 
     svg.call(zoomBehavior);
-    svg.call(zoomBehavior.transform, d3.zoomIdentity);
+    svg.call(zoomBehavior.transform, d3.zoomIdentity); // reset zoom on mount
 
     return () => {
       svg.on(".zoom", null);
     };
-  }, [dim, data]);
+  }, [dim]);
 
+  // Helper: 합쳐진 데이터 값 배열 리턴
+  const getAllValues = useCallback(() => {
+    if (!data) return [];
+    const actualValues = data.map((d) => +d[selectedGroup]);
+    const predictedValues = predictionData?.map((d) => d.predictedValue) ?? [];
+    return actualValues.concat(predictedValues);
+  }, [data, predictionData, selectedGroup]);
+
+  // Render chart
   useEffect(() => {
-    if (!data || dim.width === 0 || dim.height === 0) return;
+    if (!data || dim.width === 0 || dim.height === 0 || !svgRef.current) return;
 
-    const svg = d3.select(svgRef.current!);
+    const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
     const width = dim.width - margin.left - margin.right;
     const height = dim.height - margin.top - margin.bottom;
 
-    const chartArea = svg.append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`)
-      .attr("clip-path", "url(#clip)");
-
-    svg.append("defs").append("clipPath")
+    // Define clip path
+    svg
+      .append("defs")
+      .append("clipPath")
       .attr("id", "clip")
       .append("rect")
       .attr("width", width)
-      .attr("height", height)
-      .transition().style("duration", "0");
+      .attr("height", height);
 
-    const axisArea = svg.append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
+    const chartArea = svg
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`)
+      .attr("clip-path", "url(#clip)");
 
-    const N = data.length;
-    const xBase = d3.scaleLinear().domain([0, N - 1]).range([0, width]);
+    const axisArea = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // Scales
+    const totalLength = data.length + (predictionData?.length || 0);
+    const xBase = d3.scaleLinear().domain([0, totalLength - 1]).range([0, width]);
     const x = transform.rescaleX(xBase);
-    const values = data.map(d => +d[selectedGroup]);
-    const y = d3.scaleLinear().domain(d3.extent(values) as [number, number]).nice().range([height, 0]);
 
-    axisArea.append("g")
+    const allValues = getAllValues();
+    const yDomain = d3.extent(allValues) as [number, number];
+    const y = d3.scaleLinear().domain(yDomain).nice().range([height, 0]);
+
+    // Axes
+    axisArea
+      .append("g")
       .attr("transform", `translate(0,${height})`)
       .call(d3.axisBottom(x).tickSize(-height).tickPadding(10))
-      .selectAll("line").attr("stroke", "#ddd");
+      .selectAll("line")
+      .attr("stroke", "#ddd");
 
-    axisArea.append("g")
+    axisArea
+      .append("g")
       .call(d3.axisLeft(y).tickSize(-width).tickPadding(10))
-      .selectAll("line").attr("stroke", "#ddd");
+      .selectAll("line")
+      .attr("stroke", "#ddd");
 
-    const stateFieldMap: Record<string, string> = {
-      pw: "powerState", u_totV: "voltageState", t_3: "temperatureState",
-    };
-
-    const filteredData = data.map((d, i) => ({ ...d, index: i }));
-    const stateLines = filteredData.map(d => ({
-      index: d.index,
-      state: d[stateFieldMap[selectedGroup]] as string
+    // Background state bars (actual data)
+    const stateLines = data.map((d, i) => ({
+      index: i,
+      state: d[stateFieldMap[selectedGroup]],
     }));
 
-    const stateColor = (s: string | undefined) =>
-      s === "NORMAL" ? "#14ca74" : s === "WARNING" ? "#f0ad4e" : s === "ERROR" ? "#d9534f" : "#ccc";
-
-    chartArea.selectAll("line.state")
+    chartArea
+      .selectAll("line.state")
       .data(stateLines)
       .join("line")
-      .attr("x1", d => x(d.index))
-      .attr("x2", d => x(d.index))
+      .attr("x1", (d) => x(d.index))
+      .attr("x2", (d) => x(d.index))
       .attr("y1", 0)
       .attr("y2", height)
-      .attr("stroke", d => stateColor(d.state))
+      .attr("stroke", (d) => stateColor(d.state))
       .attr("stroke-width", 1)
       .attr("stroke-opacity", 0.15);
 
-    const lineGen = d3.line<number>()
+    // Actual data line
+    const actualValues = data.map((d) => +d[selectedGroup]);
+    const line = d3
+      .line<number>()
       .x((_, i) => x(i))
-      .y(d => y(d));
+      .y((d) => y(d));
 
-    chartArea.append("path")
-      .datum(values)
+    chartArea
+      .append("path")
+      .datum(actualValues)
       .attr("fill", "none")
       .attr("stroke", d3.schemeSet2[["pw", "u_totV", "t_3"].indexOf(selectedGroup)])
       .attr("stroke-width", 3)
-      .attr("d", lineGen);
+      .attr("d", line);
 
-    const focusGroup = chartArea.append("g").style("display", "none");
+    // Prediction lines
+    if (predictionData?.length) {
+      const predStart = data.length;
 
-    const verticalLine = focusGroup.append("line")
-      .attr("y1", 0).attr("y2", height)
-      .attr("stroke", "gray").attr("stroke-dasharray", "3 3").attr("stroke-width", 1);
+      chartArea
+        .selectAll("line.pred-state")
+        .data(predictionData.map((d, i) => ({ index: predStart + i, state: d.state })))
+        .join("line")
+        .attr("x1", (d) => x(d.index))
+        .attr("x2", (d) => x(d.index))
+        .attr("y1", 0)
+        .attr("y2", height)
+        .attr("stroke", (d) => stateColor(d.state))
+        .attr("stroke-width", 1)
+        .attr("stroke-opacity", 0.15);
 
-    const horizontalLine = focusGroup.append("line")
-      .attr("x1", 0).attr("x2", width)
-      .attr("stroke", "gray").attr("stroke-dasharray", "3 3").attr("stroke-width", 1);
+      const predLine = d3
+        .line<PredictionPoint>()
+        .x((_, i) => x(predStart + i))
+        .y((d) => y(d.predictedValue));
 
+      chartArea
+        .append("path")
+        .datum(predictionData)
+        .attr("fill", "none")
+        .attr("stroke", "gray")
+        .attr("stroke-dasharray", "4 4")
+        .attr("stroke-width", 2)
+        .attr("d", predLine);
+    }
+
+    // Focus group: vertical + horizontal line for hover effect
+    const focus = chartArea.append("g").style("display", "none");
+
+    const verticalLine = focus
+      .append("line")
+      .attr("class", "verticalLine")
+      .attr("y1", 0)
+      .attr("y2", height)
+      .attr("stroke", "#666")
+      .attr("stroke-width", 1)
+      .attr("stroke-dasharray", "3 3");
+
+    const horizontalLine = focus
+      .append("line")
+      .attr("class", "horizontalLine")
+      .attr("x1", 0)
+      .attr("x2", width)
+      .attr("stroke", "#666")
+      .attr("stroke-width", 1)
+      .attr("stroke-dasharray", "3 3");
+
+    // Label group
     const labelGroup = svg.append("g").style("display", "none");
 
-    const xLabel = labelGroup.append("text")
+    const xLabel = labelGroup
+      .append("text")
       .attr("fill", "#333")
       .attr("font-size", "12px")
-      .attr("text-anchor", "middle");
+      .attr("text-anchor", "middle")
+      .attr("font-weight", "bold");
 
-    const yLabel = labelGroup.append("text")
+    const yLabel = labelGroup
+      .append("text")
       .attr("fill", "#333")
       .attr("font-size", "12px")
-      .attr("text-anchor", "end");
+      .attr("text-anchor", "end")
+      .attr("font-weight", "bold");
 
-    svg.on("mousemove", (event) => {
-      const [mx, my] = d3.pointer(event);
-      const mouseX = mx - margin.left;
-
-      const x0 = x.invert(mouseX);
-      const i = d3.bisector((d: any) => d.index).left(filteredData, x0);
-      const d = filteredData[i];
-      if (!d) return;
-
-      const cx = x(d.index);
-      const cy = y(d[selectedGroup]);
-
-      focusGroup.style("display", null);
-      labelGroup.style("display", null);
-
-      verticalLine.attr("x1", cx).attr("x2", cx);
-      horizontalLine.attr("y1", cy).attr("y2", cy);
-
-      xLabel
-        .attr("x", cx + margin.left)
-        .attr("y", height + margin.top + 18)
-        .attr("font-size", 10)
-        .attr("font-weight", 900)
-        .text(`${d.index}`);
-        
-
-      yLabel
-        .attr("x", margin.left - 8)
-        .attr("y", cy + margin.top + 4)
-        .attr("font-size", 10)
-        .attr("font-weight", 900)
-        .text(d[selectedGroup].toFixed(4))
-    })
+    // Transparent rect for mouse events
+    chartArea
+      .append("rect")
+      .attr("width", width)
+      .attr("height", height)
+      .style("fill", "none")
+      .style("pointer-events", "all")
       .on("mouseover", () => {
-        focusGroup.style("display", null);
+        focus.style("display", null);
         labelGroup.style("display", null);
       })
       .on("mouseout", () => {
-        focusGroup.style("display", "none");
+        focus.style("display", "none");
         labelGroup.style("display", "none");
+      })
+      .on("mousemove", (event) => {
+        const [mouseX] = d3.pointer(event);
+        const x0 = xBase.invert(transform.invertX(mouseX));
+        const i = Math.round(x0);
+
+        if (i >= 0 && i < totalLength) {
+          const cx = x(i);
+          verticalLine.attr("x1", cx).attr("x2", cx);
+
+          let val: number | null = null;
+          if (i < data.length) {
+            val = +data[i][selectedGroup];
+          } else if (predictionData && i - data.length < predictionData.length) {
+            val = predictionData[i - data.length].predictedValue;
+          }
+
+          if (val !== null) {
+            const cy = y(val);
+            horizontalLine.attr("y1", cy).attr("y2", cy);
+
+            xLabel
+              .attr("x", cx + margin.left)
+              .attr("y", height + margin.top + 18)
+              .attr("font-size", 10)
+              .attr("font-weight", 900)
+              .text(`${i}`);
+
+            yLabel
+              .attr("x", margin.left - 8)
+              .attr("y", margin.top + cy + 4)
+              .attr("font-size", 10)
+              .attr("font-weight", 900)
+              .text(val.toFixed(4));
+          }
+        }
       });
-  }, [data, dim, selectedGroup, transform]);
+  }, [data, predictionData, dim, selectedGroup, transform, getAllValues]);
 
   return (
     <div
@@ -210,10 +349,7 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
       style={{ position: "relative", width: "100%", height: "95%" }}
       ref={containerRef}
     >
-      <svg
-        ref={svgRef}
-        style={{ display: "block", width: "100%", height: "100%" }}
-      />
+      <svg ref={svgRef} style={{ display: "block", width: "100%", height: "100%" }} />
     </div>
   );
 }
