@@ -49,12 +49,12 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({ onClose, onSubmit
             />
           </div>
           <div className={styles.inputField}>
-            <div className={styles.label}>고객명</div>
+            <div className={styles.label}>고객 식별번호</div>
             <input
               className={styles.input}
               value={clientId}
               onChange={(e) => setClientId(e.target.value)}
-              placeholder="고객명을 입력하세요"
+              placeholder="고객 식별번호를 입력하세요"
             />
           </div>
           <div className={styles.inputField}>
