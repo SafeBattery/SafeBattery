@@ -45,7 +45,9 @@ function Dashboard() {
 
   const groups: string[] = ["pw", "u_totV", "t_3"];
   // 렌더링할 항목 선택 - LineChart
-  const [selectedGroup1, setSelectedGroup1] = useState("pw");
+  type AllowedGroup = "pw" | "u_totV" | "t_3";
+
+  const [selectedGroup1, setSelectedGroup1] = useState<AllowedGroup>("pw");
 
   // 렌더링할 항목 선택 - ImpactChart
   const [selectedGroup2, setSelectedGroup2] = useState("voltagepower");
@@ -56,7 +58,7 @@ function Dashboard() {
     } else {
       setSelectedGroup2("voltagepower")
     }
-    setSelectedGroup1(value)
+    setSelectedGroup1(value as AllowedGroup)
   };
 
   // 각 그룹별 체크 항목
