@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './Dashboard.module.css';
-import { LineChart, LineCharts, FeatureCheckBox, ImpactHeatmap } from './components'
+import { LineChart, LineCharts, DynamaskModal, TrendModal } from './components'
 import axios from 'axios';
 import { ToggleGroup } from './components/ToggleGroup/ToggleGroup';
 
@@ -48,6 +48,12 @@ function Dashboard() {
   type AllowedGroup = "pw" | "u_totV" | "t_3";
 
   const [selectedGroup1, setSelectedGroup1] = useState<AllowedGroup>("pw");
+
+  const [showPowerModal, setShowPowerModal] = useState(false);
+  const [showVoltageModal, setShowVoltageModal] = useState(false);
+  const [showTemperatureModal, setShowTemperatureModal] = useState(false);
+  const [showTrendModal, setShowTrendModal] = useState(false);
+  const [showDynamaskModal, setShowDynamaskModal] = useState(false);
 
   // 렌더링할 항목 선택 - ImpactChart
   const [selectedGroup2, setSelectedGroup2] = useState("voltagepower");
@@ -205,19 +211,28 @@ function Dashboard() {
 
           {/* {power 카드} */}
           <div className={`${styles.card} ${styles.power}`}>
-            <div className={styles.cardTitle}>전력</div>
+
+            <div className={styles.cardHeader}>
+              <div className={styles.cardTitle}>전력</div>
+            </div>
             <div className={styles.cardContent}>
-              <div
-                className={styles.powerState}
-                style={{
-                  backgroundColor:
-                    latestValues.powerState === 'DANGER'
-                      ? '#d9534f'
-                      : latestValues.powerState === 'WARNING'
-                        ? '#f0ad4e'
-                        : '#14ca74',
-                }}
-              ></div>
+              <div className={styles.powerStateWrapper}>
+                <span className={styles.simptipPositionTop} data-tooltip="초록: 정상(0.6 ~ 0.9), 노랑: 경고, 빨강: 위험">
+                  <div
+                    className={styles.powerState}
+                    style={{
+                      backgroundColor:
+                        latestValues.powerState === 'DANGER'
+                          ? '#d9534f'
+                          : latestValues.powerState === 'WARNING'
+                            ? '#f0ad4e'
+                            : '#14ca74',
+                    }}
+                  >
+                  </div>
+                </span>
+                
+              </div>
               <div className={styles.powerValue}>
                 {latestValues.pw !== null ? `${latestValues.pw}W` : '...'}
               </div>
@@ -226,19 +241,24 @@ function Dashboard() {
 
           {/* {u_totV 카드} */}
           <div className={`${styles.card} ${styles.voltage}`}>
-            <div className={styles.cardTitle}>전압</div>
+            <div className={styles.cardHeader}>
+              <div className={styles.cardTitle}>전압</div>
+            </div>
             <div className={styles.cardContent}>
-              <div
-                className={styles.voltageState}
-                style={{
-                  backgroundColor:
-                    latestValues.voltageState === 'DANGER'
-                      ? '#d9534f'
-                      : latestValues.voltageState === 'WARNING'
-                        ? '#f0ad4e'
-                        : '#14ca74',
-                }}
-              ></div>
+              <span className={styles.simptipPositionTop} data-tooltip="초록: 정상(0.6 ~ 0.9), 노랑: 경고, 빨강: 위험">
+                  <div
+                    className={styles.voltageState}
+                    style={{
+                      backgroundColor:
+                        latestValues.voltageState === 'DANGER'
+                          ? '#d9534f'
+                          : latestValues.voltageState === 'WARNING'
+                            ? '#f0ad4e'
+                            : '#14ca74',
+                    }}
+                  >
+                  </div>
+                </span>
               <div className={styles.voltageValue}>
                 {latestValues.u_totV !== null ? `${latestValues.u_totV}V` : '...'}
               </div>
@@ -247,19 +267,24 @@ function Dashboard() {
 
           {/* {t_3} */}
           <div className={`${styles.card} ${styles.temperature}`}>
-            <div className={styles.cardTitle}>온도</div>
+            <div className={styles.cardHeader}>
+              <div className={styles.cardTitle}>온도</div>
+            </div>
             <div className={styles.cardContent}>
-              <div
-                className={styles.temperatureState}
-                style={{
-                  backgroundColor:
-                    latestValues.temperatureState === 'DANGER'
-                      ? '#d9534f'
-                      : latestValues.temperatureState === 'WARNING'
-                        ? '#f0ad4e'
-                        : '#14ca74',
-                }}
-              ></div>
+              <span className={styles.simptipPositionTop} data-tooltip="초록: 정상(0.6 ~ 0.9), 노랑: 경고, 빨강: 위험">
+                  <div
+                    className={styles.temperatureState}
+                    style={{
+                      backgroundColor:
+                        latestValues.temperatureState === 'DANGER'
+                          ? '#d9534f'
+                          : latestValues.temperatureState === 'WARNING'
+                            ? '#f0ad4e'
+                            : '#14ca74',
+                    }}
+                  >
+                  </div>
+                </span>
               <div className={styles.temperatureValue}>
                 {latestValues.t_3 !== null ? `${latestValues.t_3}°C` : '...'}
               </div>
@@ -268,27 +293,24 @@ function Dashboard() {
         </div>
 
 
-
         <div className={`${styles.cardSection} ${styles.history}`}>
           <div className={`${styles.card} ${styles.trend}`}>
             <div className={styles.cardHeader}>
-              <div className={styles.cardTitle}>센서 데이터 및 상태 트렌드</div>
+              <div className={styles.cardTitle}>
+                센서 데이터 및 상태 트렌드
+              </div>
+              <div className="material-icons"
+                  style={{cursor: "pointer"}}
+                  onClick={() => setShowTrendModal(true)}
+              >help
+              </div>
+              {showTrendModal && <TrendModal onClose={() => setShowTrendModal(false)} />}
               <ToggleGroup
                 items={groups}
                 value={selectedGroup1}
                 onChange={(event) => setSelectedGroups(event)}
                 aria-label="Select data group"
               />
-              {/* <select
-                className={styles.selectDropdown}
-                value={selectedGroup1}
-                onChange={(e) => setSelectedGroup1(e.target.value as "pw" | "u_totV" | "t_3")}
-                aria-label="Select data group"
-              >
-                {["pw", "u_totV", "t_3"].map((group) => (
-                  <option key={group} value={group}>{group}</option>
-                ))}
-              </select> */}
               <button className={styles.excelDownloadButton} onClick={handleCsvDownload}>
                 <span className="material-icons" style={{ fontSize: '16px', marginRight: '6px' }}>download</span>
                 전체 데이터셋 다운로드
@@ -306,45 +328,15 @@ function Dashboard() {
             <div className={`${styles.card} ${styles.trend}`}>
               <div className={styles.cardHeader}>
                 <div className={styles.cardTitle}>피처 영향도 분석</div>
-
-                {/* <select
-            className={styles.selectDropdown}
-            value={selectedGroup2}
-            onChange={(v) => setSelectedGroup2ByGroup1(v)}
-            aria-label="Select data group"
-          >
-            {["voltagepower", "temperature"].map((group) => (
-              <option key={group} value={group}>{group}</option>
-            ))}
-          </select> */}
-                {/* 
-          <div className={styles.checkBoxContainer}>
-            {featuresToRender.map((feature) => (
-              <FeatureCheckBox
-                key={feature}
-                label={feature}
-                checked={selectedFeatures.includes(feature)}
-                onChange={() => toggleFeature(feature)}
-              />
-            ))}
-          </div> */}
+                <div className="material-icons"
+                  style={{cursor: "pointer"}}
+                  onClick={() => setShowDynamaskModal(true)}
+                >help
+                </div>
+                {showDynamaskModal && <DynamaskModal onClose={() => setShowDynamaskModal(false)} />}
               </div>
 
               <LineCharts selectedGroup={selectedGroup1} />
-              {/* 조건부 차트 렌더링 */}
-              {/* {selectedGroup2 === "voltagepower" && (
-                <>
-                  <LineCharts selectedGroup="pw" selectedFeatures={selectedFeatures} />}
-                  <LineCharts selectedGroup="u_totV" selectedFeatures={selectedFeatures} />}
-                  <ImpactHeatmap selectedGroup="voltagepower" />
-                </>
-              )}
-              {selectedGroup2 === "temperature" && (
-                <>
-                  <LineCharts selectedGroup={selectedGroup1} />
-                  <ImpactHeatmap selectedGroup="temperature" />
-                </>
-              )} */}
             </div>
           </div>
         </div>
