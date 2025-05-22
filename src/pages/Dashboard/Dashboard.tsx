@@ -88,35 +88,38 @@ function Dashboard() {
   ];
 
 
-
   // CSV 다운로드
-  const handleCsvDownload = () => {
-    fetch(`http://localhost:8080/api/pemfc/${id}/csv`)
-      .then(res => {
-        if (!res.ok) throw new Error("Download failed");
-        return res.blob();
-      })
-      .then(blob => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `pemfc_${id}_data.csv`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-      })
-      .catch(error => {
-        console.error("CSV 다운로드 실패:", error);
-      });
-  };
+  const handleCsvDownload = async () => {
+  try {
+    const response = await axios.get(
+      `http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/csv`,
+      { responseType: 'blob' }
+    );
+
+    const blob = new Blob([response.data], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pemfc_${id}_data.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+
+    console.log(`CSV 다운로드 성공! : http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/csv`); 
+  } catch (error) {
+    console.error('CSV 다운로드 실패:', error);
+  }
+};
 
   // 모델명 API 호출
   useEffect(() => {
     if (!id) return;
 
-    axios.get(`http://localhost:8080/api/pemfc/${id}`)
+    axios
+      .get(`http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}`)
       .then(response => {
+        console.log('모델 이름 API 호출 성공:', response.data.modelName); 
         setModelName(response.data.modelName);
       })
       .catch(error => {
@@ -134,9 +137,9 @@ function Dashboard() {
   useEffect(() => {
     if (!id) return;
 
-    axios.get(`http://localhost:8080/api/pemfc/${id}/record/recent600`)
+    axios.get(`http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/record/recent600`)
       .then(response => {
-        console.log(`http://localhost:8080/api/pemfc/${id}/record/recent600 API가 정상적으로 호출됐습니다`);
+        console.log(`최근 센서 데이터 API 호출 성공!: http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/record/recent600`);
 
         const data = response.data;
         if (Array.isArray(data) && data.length > 0) {
@@ -153,7 +156,7 @@ function Dashboard() {
         }
       })
       .catch(error => {
-        console.error("API 호출 실패:", error);
+        console.error("최근 센서 데이터 API 호출 실패:", error);
       });
   }, [id]);
 
