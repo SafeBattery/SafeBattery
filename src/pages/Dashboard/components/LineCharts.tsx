@@ -27,7 +27,7 @@ const featureMap: Record<string, { apiPath: string; features: string[] }> = {
     apiPath: "voltagepower",
     features: [
       "ia",          // lowercase i
-      "ia_diff",     // 마찬가지
+      "iA_diff",     // 마찬가지
       "p_H2_supply", // lowercase p
       "p_H2_inlet",
       "p_Air_supply",
@@ -158,7 +158,20 @@ function LineCharts({ selectedGroup }: LineChartsProps) {
 
     const featureKeys = featureMap[selectedGroup].features;
     featureMap[selectedGroup].features.forEach((key, i) => {
-      const series = recordData.map(d => +d[key]);
+      let series: number[] = [];
+
+      if (key === "ia_diff") {
+        series = recordData.map((d, idx) => {
+          if (idx === 0) return 0;  
+          const current = +recordData[idx][ "ia" ];  
+          const prev = +recordData[idx - 1][ "ia" ];
+          if (isNaN(current) || isNaN(prev)) return 0;
+          return current - prev;
+        });
+        console.log("ia_diff series sample:", series.slice(0, 10));
+        } else {
+          series = recordData.map(d => +d[key]);
+        }
       const [minV, maxV] = d3.extent(series) as [number, number];
       const pad = (maxV - minV) * 0.1;
       const y0 = Math.max(0, minV - pad);
