@@ -2,6 +2,7 @@ import * as d3 from "d3";
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import styles from "../Dashboard.module.css";
+import axios from "axios";
 
 interface LineChartProps {
   selectedGroup: "pw" | "u_totV" | "t_3";
@@ -66,38 +67,51 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
 
   // Fetch recent record data
   useEffect(() => {
-    if (!id) return;
-    setData(null);
+  if (!id) return;
+  setData(null);
 
-    fetch(`http://localhost:8080/api/pemfc/${id}/record/recent600`)
-      .then((res) => res.json())
-      .then((arr) => {
-        if (Array.isArray(arr)) setData(arr.reverse());
-      })
-      .catch(console.error);
-  }, [id]);
+  axios
+    .get(`http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/record/recent600`)
+    .then((response) => {
+      const arr = response.data;
+      if (Array.isArray(arr)) {
+        setData(arr.reverse());
+        console.log(`최근 600개 레코드 데이터 호출 성공!: http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/record/recent600`);
+      } else {
+        console.warn("응답이 배열이 아님:", arr);
+      }
+    })
+    .catch((error) => {
+      console.error("최근 레코드 데이터 호출 실패:", error);
+    });
+}, [id]);
 
   // Fetch prediction data
   useEffect(() => {
-    if (!id) return;
+  if (!id) return;
 
-    const endpoint = predictionApiMap[selectedGroup];
-    setPredictionData(null);
+  const endpoint = predictionApiMap[selectedGroup];
+  setPredictionData(null);
 
-    fetch(`http://localhost:8080/api/pemfc/${id}/predictions/${endpoint}`)
-      .then((res) => res.json())
-      .then((arr) => {
-        if (Array.isArray(arr)) {
-          setPredictionData(
-            arr.map((d: any) => ({
-              predictedValue: +d.predictedValue,
-              state: d.state,
-            }))
-          );
-        }
-      })
-      .catch(console.error);
-  }, [id, selectedGroup]);
+  axios
+    .get(`http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/predictions/${endpoint}`)
+    .then((response) => {
+      const arr = response.data;
+      if (Array.isArray(arr)) {
+        const processed = arr.map((d: any) => ({
+          predictedValue: +d.predictedValue,
+          state: d.state,
+        }));
+        setPredictionData(processed);
+        console.log(`예측 데이터 호출 성공!: http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/predictions/${endpoint}`);
+      } else {
+        console.warn("예측 데이터 응답이 배열이 아님:", arr);
+      }
+    })
+    .catch((error) => {
+      console.error("예측 데이터 호출 실패:", error);
+    });
+}, [id, selectedGroup]);
 
   // Zoom behavior setup
   useEffect(() => {
