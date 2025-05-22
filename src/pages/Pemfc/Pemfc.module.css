@@ -158,9 +158,10 @@
 .card.rank {
   display: flex;
   flex-direction: column;
-  padding: 16px 0px;
+  padding: 16px 24px;
   flex: 0 1 598px;  
   max-width: 598px; 
+  box-sizing: border-box;
 }
 .cardHeader {
   display: flex;
@@ -245,6 +246,7 @@
   box-shadow: 3px rgba(0, 0, 0, 0.2);
   color: #000;
   height: 400px;
+  overflow-y: auto;
 }
 .listHeader {
   display: flex;
