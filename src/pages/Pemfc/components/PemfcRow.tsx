@@ -39,7 +39,7 @@ const PemfcRow: React.FC<PemfcRowProps> = ({
   useEffect(() => {
     if (!item.clientId) return;
 
-    fetch(`http://localhost:8080/api/client/${item.clientId}/name`)
+    fetch(`http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/client/${item.clientId}/name`)
       .then(res => res.text())
       .then(name => setClientName(name))
       .catch(err => {
