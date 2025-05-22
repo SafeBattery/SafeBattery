@@ -51,49 +51,58 @@ const Pemfc = () => {
 
   // API 데이터 불러오기 (마운트 시 한 번 실행)
   useEffect(() => {
-    const fetchPemfcData = async () => {
-        const response = await axios.get('http://localhost:8080/api/client/1/pemfc/all');
-      try {        const rawData = response.data;
+  const fetchPemfcData = async () => {
+    try {
+      const response = await axios.get(
+        'http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/client/1/pemfc/all'
+      );
 
-        const processedData: PemfcInstance[] = rawData.map((item: any) => {
-          const state = determineState(item.powerState, item.voltageState, item.temperatureState);
+      const rawData = response.data;
+      console.log('PEMFC API 데이터 가져오기 성공! : http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/client/1/pemfc/all'); 
 
-          return {
-            id: item.id,
-            clientId: item.clientId, 
-            modelName: item.modelName,
-            manufacturedDate: item.manufacturedDate,
-            lat: item.lat,
-            lng: item.lng,
-            powerState: item.powerState,
-            voltageState: item.voltageState,
-            temperatureState: item.temperatureState,
-            state: state
-          };
-        });
+      const processedData: PemfcInstance[] = rawData.map((item: any) => {
+        const state = determineState(item.powerState, item.voltageState, item.temperatureState);
 
-        setPemfcData(processedData); 
+        return {
+          id: item.id,
+          clientId: item.clientId,
+          modelName: item.modelName,
+          manufacturedDate: item.manufacturedDate,
+          lat: item.lat,
+          lng: item.lng,
+          powerState: item.powerState,
+          voltageState: item.voltageState,
+          temperatureState: item.temperatureState,
+          state: state,
+        };
+      });
 
-      } catch (error) {
-        console.error('PEMFC API 데이터 가져오기 실패:', error);
-      }
-    };
+      setPemfcData(processedData);
+    } catch (error) {
+      console.error('PEMFC API 데이터 가져오기 실패:', error);
+    }
+  };
 
-    fetchPemfcData();
-  }, []);
+  fetchPemfcData(); 
+}, []);
+
 
   useEffect(() => {
-    const fetchClientName = async () => {
-      try {
-        const response = await axios.get('http://localhost:8080/api/client/1/name');
-        setClientName(response.data); // 예: "홍길동"
-      } catch (error) {
-        console.error('클라이언트 이름 가져오기 실패:', error);
-      }
-    };
+  const fetchClientName = async () => {
+    try {
+      const response = await axios.get(
+        'http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/client/1/name'
+      );
 
-    fetchClientName();
-  }, []);
+      console.log('클라이언트 이름 가져오기 성공!: http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/client/1/name');
+      setClientName(response.data);
+    } catch (error) {
+      console.error('클라이언트 이름 가져오기 실패:', error);
+    }
+  };
+
+  fetchClientName();
+}, []);
 
   // 상태 동기화 (pemfcData 변경 시마다) - O
   useEffect(() => {
@@ -170,55 +179,110 @@ const Pemfc = () => {
         voltageState: 'NORMAL',
         temperatureState: 'NORMAL',
       };
-      await axios.post('http://localhost:8080/api/pemfc/', payload);
+      await axios.post('http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/', payload);
       alert('PEMFC 등록 성공!');
+      console.log('PEMFC 등록 성공!: http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/')
       setIsRegistrationModalOpen(false);
     } catch (error) {
       alert('등록 실패');
-      console.error(error);
+      console.error('PEMFC 등록 실패', error);
     }
   };
 
   // 모든 PEMFC 데이터 재조회 - O
   const handleReload = async () => {
-    try {
-      const response = await axios.get(`http://localhost:8080/api/client/1/pemfc/all`);
-      const rawData = response.data;
+  try {
+    const response = await axios.get(
+      `http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/client/1/pemfc/all`
+    );
+    const rawData = response.data;
 
-      if (Array.isArray(rawData)) {
-        const mappedData = rawData.map((item: any) => ({
-          id: item.id,
-          modelName: item.modelName,
-          clientId: item.clientId, 
-          lat: item.lat,
-          lng: item.lng,
-          manufacturedDate: item.manufacturedDate,
-          powerState: item.powerState,
-          voltageState: item.voltageState,
-          temperatureState: item.temperatureState,
-          state: determineState(item.powerState, item.voltageState, item.temperatureState),
-        }));
+    if (Array.isArray(rawData)) {
+      console.log('PEMFC 데이터 재조회 성공: http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/client/1/pemfc/all'); 
 
-        setPemfcData(mappedData);
-      }
-    } catch (error) {
-      console.error('PEMFC 데이터 불러오기 오류:', error);
+      const mappedData = rawData.map((item: any) => ({
+        id: item.id,
+        modelName: item.modelName,
+        clientId: item.clientId,
+        lat: item.lat,
+        lng: item.lng,
+        manufacturedDate: item.manufacturedDate,
+        powerState: item.powerState,
+        voltageState: item.voltageState,
+        temperatureState: item.temperatureState,
+        state: determineState(item.powerState, item.voltageState, item.temperatureState),
+      }));
+
+      setPemfcData(mappedData);
+    } else {
+      console.warn('응답 데이터가 배열이 아닙니다');
     }
-  };
+  } catch (error) {
+    console.error('PEMFC 데이터 재조회 오류:', error);
+  }
+};
 
-  // 모든 PEMFC 삭제!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
-  const handleDeleteAll = () => {
-    if (window.confirm('모든 PEMFC 데이터를 삭제하시겠습니까?')) {
-      localStorage.removeItem('pemfcData');
-      setPemfcData([]);
-      if (leafletMap) {
-        leafletMap.eachLayer((layer) => {
-          if (layer instanceof L.Marker) leafletMap.removeLayer(layer);
-        });
-      }
-      alert('모든 PEMFC 데이터가 삭제되었습니다.');
+  // 모든 PEMFC 삭제
+  const handleDeleteAll = async () => {
+  const confirmed = window.confirm("모든 PEMFC 데이터를 삭제하시겠습니까?");
+  if (!confirmed) return;
+
+  try {
+    const response = await axios.get("http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/client/1/pemfc/all");
+    const rawData = response.data;
+
+    if (!Array.isArray(rawData) || rawData.length === 0) {
+      alert("삭제할 PEMFC 데이터가 없습니다.");
+      return;
     }
-  };
+
+    const deletableIds: number[] = [];
+
+    await Promise.all(
+      rawData.map(async (item: { id: number }) => {
+        try {
+          await axios.delete(`http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${item.id}/delete`);
+          deletableIds.push(item.id);
+        } catch (error) {
+          console.warn(`PEMFC ${item.id} 삭제 실패 (삭제 불가 대상일 수 있음).`);
+        }
+      })
+    );
+
+    // 삭제된 항목 기준으로 상태 업데이트
+    const remaining = pemfcData.filter((item) => !deletableIds.includes(item.id));
+    setPemfcData(remaining);
+
+    // 마커 갱신
+    if (leafletMap) {
+      const newMarkers: typeof markerRefs = [];
+      remaining.forEach((pemfc, idx) => {
+        const marker = markerRefs.find((m, i) => pemfcData[i]?.id === pemfc.id);
+        if (marker) {
+          newMarkers.push(marker);
+        }
+      });
+
+      // 지도에서 삭제된 마커 제거
+      markerRefs.forEach((marker, i) => {
+        if (!remaining.find((pemfc) => pemfc.id === pemfcData[i]?.id)) {
+          leafletMap.removeLayer(marker);
+        }
+      });
+
+      setMarkerRefs(newMarkers);
+    }
+
+    setSelectedIndex(null);
+    setIsDeleteModalOpen(false);
+
+    alert(`${deletableIds.length}개의 PEMFC가 삭제되었습니다.`);
+    console.log(`${deletableIds.length}개 PEMFC가 삭제 완료`)
+  } catch (error) {
+    console.error("PEMFC 전체 삭제 중 오류:", error);
+    alert("일부 데이터를 삭제하는 중 오류가 발생했습니다.");
+  }
+};
 
   // 특정 PEMFC 삭제
   const handleDelete = async (index: number) => {
@@ -230,9 +294,12 @@ const Pemfc = () => {
     return;
   }
 
+  const confirmed = window.confirm(`정말로 PEMFC를 삭제하시겠습니까?`);
+  if (!confirmed) return;
+
   try {
     // DELETE 요청
-    await axios.delete(`http://localhost:8080/api/pemfc/${pemfcId}/delete`);
+    await axios.delete(`http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${pemfcId}/delete`);
 
     // UI 상태 동기화
     const updatedData = [...pemfcData];
@@ -252,14 +319,15 @@ const Pemfc = () => {
     setMarkerRefs(updatedMarkers);
 
     setSelectedIndex(null);
-    setIsDeleteModalOpen(false);
 
-    console.log(`PEMFC ${pemfcId} 삭제 완료`);
+    alert(`PEMFC 삭제 완료`);
+    console.log(`PEMFC 삭제 완료: ${pemfcId}`);
   } catch (error) {
     console.error("PEMFC 삭제 중 오류 발생:", error);
     alert("삭제 중 오류가 발생했습니다. 다시 시도해주세요.");
   }
 };
+
   // 특정 PEMFC 삭제 모달 열기
   const openDeleteModal = (index: number) => {
     setDeleteIndex(index); 
@@ -379,7 +447,7 @@ const Pemfc = () => {
                       index={index}
                       selectedIndex={selectedIndex}
                       setSelectedIndex={setSelectedIndex}
-                      handleDelete={openDeleteModal}
+                      handleDelete={handleDelete}
                       styles={styles}
                     />
                   ))}
