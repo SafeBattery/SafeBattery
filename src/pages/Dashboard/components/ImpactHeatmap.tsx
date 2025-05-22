@@ -2,6 +2,7 @@ import * as d3 from 'd3';
 import { useRef, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import styles from '../Dashboard.module.css';
+import axios from 'axios';
 import { interpolateRdBu } from 'd3-scale-chromatic';
 
 interface ImpactHeatmapProps {
@@ -62,23 +63,25 @@ export default function ImpactHeatmap({ selectedGroup }: ImpactHeatmapProps) {
 
     
 
-    fetch(`http://localhost:8080/api/pemfc/${id}/dynamask/${selectedGroup}/recent`)
-      .then(res => res.json())
-      .then((json) => {
-        if (!json?.value || !Array.isArray(json.value)) return;
+    axios.get(`http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/dynamask/${selectedGroup}/recent`)
+    .then(response => {
+      console.log(`다이나마스크 데이터 호출 성공: http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/dynamask/${selectedGroup}/recent`);
+      const json = response.data;
 
-        const rawData: number[][] = json.value;
-        const numTimeSteps = rawData.length;
-        const reversedRawData = [...rawData].reverse();
+      if (!json?.value || !Array.isArray(json.value)) return;
 
-        // Transpose data: [{feature, time, value}]
-        const data = reversedRawData.flatMap((row, t) =>
-          row.map((value, f) => ({
-            time: t,
-            feature: features[f],
-            value,
-          }))
-        );
+      const rawData: number[][] = json.value;
+      const numTimeSteps = rawData.length;
+      const reversedRawData = [...rawData].reverse();
+
+      // Transpose data
+      const data = reversedRawData.flatMap((row, t) =>
+        row.map((value, f) => ({
+          time: t,
+          feature: features[f],
+          value,
+        }))
+      );
 
         const x = d3.scaleLinear()
           .domain([0, numTimeSteps])
