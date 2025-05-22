@@ -2,6 +2,7 @@ import * as d3 from "d3";
 import React, { useRef, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import styles from "../Dashboard.module.css";
+import axios from "axios";
 
 interface LineChartsProps {
   selectedGroup: string
@@ -93,30 +94,42 @@ function LineCharts({ selectedGroup }: LineChartsProps) {
   // Fetch maskData when id or selectedGroup changes
   useEffect(() => {
     if (!id || !featureConfig) return;
-    fetch(`http://localhost:8080/api/pemfc/${id}/dynamask/${featureConfig.apiPath}/recent`)
-      .then(res => res.json())
-      .then(json => {
-        if (json?.value) setMaskData(json.value);
+
+    axios
+      .get(`http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/dynamask/${featureConfig.apiPath}/recent`)
+      .then((response) => {
+        const json = response.data;
+        if (json?.value) {
+          setMaskData(json.value);
+          console.log(`마스크 데이터 호출 성공: http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/dynamask/${featureConfig.apiPath}/recent`);
+        } else {
+          console.warn("마스크 데이터 형식이 예상과 다름:", json);
+        }
+      })
+      .catch((error) => {
+        console.error("마스크 데이터 호출 실패:", error);
       });
   }, [id, featureConfig]);
 
+
   // Fetch recordData when id changes
   useEffect(() => {
-    if (!id) return;
-    fetch(`http://localhost:8080/api/pemfc/${id}/record/recent600`)
-      .then(res => res.json())
-      .then(json => {
-        if (Array.isArray(json)) setRecordData(json.reverse());
-      });
-  }, [id]);
+  if (!id) return;
 
-
-
-
-
-
-
-
+  axios.get(`http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/record/recent600`)
+    .then(response => {
+      const json = response.data;
+      if (Array.isArray(json)) {
+        setRecordData(json.reverse());
+        console.log(`최근 레코드 데이터 호출 성공: http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/record/recent600`);
+      } else {
+        console.warn("최근 레코드 데이터 형식이 예상과 다름:", json);
+      }
+    })
+    .catch(error => {
+      console.error("최근 레코드 데이터 호출 실패:", error);
+    });
+}, [id]);
 
   useEffect(() => {
     if (!containerRef.current || recordData.length === 0 || maskData.length === 0) {
