@@ -169,9 +169,10 @@ function LineCharts({ selectedGroup }: LineChartsProps) {
           return current - prev;
         });
         console.log("ia_diff series sample:", series.slice(0, 10));
-        } else {
-          series = recordData.map(d => +d[key]);
-        }
+      } else {
+        series = recordData.map(d => +d[key]);
+      }
+      
       const [minV, maxV] = d3.extent(series) as [number, number];
       const pad = (maxV - minV) * 0.1;
       const y0 = Math.max(0, minV - pad);
@@ -326,8 +327,18 @@ function LineCharts({ selectedGroup }: LineChartsProps) {
     
   }, [recordData, maskData, selectedGroup]);
   return (
-    <div ref={containerRef}
-      className={styles.lineChartContainer} />
+    <div ref={containerRef} className={styles.lineChartContainer}>
+      {maskData.length === 0 ? (
+        <div className={styles.noMaskMessage}>
+          <span className="material-icons"
+            style={{fontSize: '250px',
+            color: "rgba(79, 123, 246, 0.2)",
+            marginBottom: '16px'}}
+          >info</span>
+          <p>마스크 데이터는 문제 상황이 발생했을 때만 생성됩니다.</p>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
