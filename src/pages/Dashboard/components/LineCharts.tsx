@@ -296,6 +296,8 @@ function LineCharts({ selectedGroup }: LineChartsProps) {
       zoomBehavior.transform,
       d3.zoomIdentity.translate(-width*(initialScale-1),0).scale(initialScale),
     );
+
+    
   }, [recordData, maskData, selectedGroup]);
   return (
     <div ref={containerRef}
