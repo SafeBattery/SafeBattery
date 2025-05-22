@@ -6,9 +6,6 @@ import L from 'leaflet';
 import locationIcon from './assets/location_on.png';
 import styles from './Pemfc.module.css';
 import 'leaflet/dist/leaflet.css';
-import { dummyData_power } from './dummy_data/dummyData_power';
-import { dummyData_voltage } from './dummy_data/dummyData_voltage';
-import { dummyData_temperature } from './dummy_data/dummyData_temperature';
 
 const Pemfc = () => {
 
@@ -209,7 +206,7 @@ const Pemfc = () => {
     }
   };
 
-  // 모든 PEMFC 삭제
+  // 모든 PEMFC 삭제!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
   const handleDeleteAll = () => {
     if (window.confirm('모든 PEMFC 데이터를 삭제하시겠습니까?')) {
       localStorage.removeItem('pemfcData');
