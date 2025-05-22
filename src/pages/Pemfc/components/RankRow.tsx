@@ -46,7 +46,7 @@ const RankRow = ({ selectedGroup }: RankRowProps) => {
   useEffect(() => {
     const fetchRankData = async () => {
       const endpoint = getEndpoint(selectedGroup);
-      const url = `http://localhost:8080/api/rank/${endpoint}`;
+      const url = `http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/rank/${endpoint}`;
 
       try {
         setLoading(true);
