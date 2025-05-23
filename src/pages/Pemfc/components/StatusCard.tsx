@@ -1,7 +1,7 @@
 interface StatusCardProps {
   label: string;
   count: number;
-  type: 'normal' | 'warning' | 'danger';
+  type: 'normal' | 'warning' | 'error';
   styles: { [key: string]: string };
 }
 

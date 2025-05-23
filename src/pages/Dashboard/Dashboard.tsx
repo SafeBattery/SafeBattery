@@ -38,9 +38,9 @@ function Dashboard() {
     pw: null as number | null,
     u_totV: null as number | null,
     t_3: null as number | null,
-    powerState: null as 'NORMAL' | 'WARNING' | 'DANGER' | null,
-    voltageState: null as 'NORMAL' | 'WARNING' | 'DANGER' | null,
-    temperatureState: null as 'NORMAL' | 'WARNING' | 'DANGER' | null,
+    powerState: null as 'NORMAL' | 'WARNING' | 'ERROR' | null,
+    voltageState: null as 'NORMAL' | 'WARNING' | 'ERROR' | null,
+    temperatureState: null as 'NORMAL' | 'WARNING' | 'ERROR' | null,
   });
 
   const groups: string[] = ["pw", "u_totV", "t_3"];
@@ -225,7 +225,7 @@ function Dashboard() {
                     className={styles.powerState}
                     style={{
                       backgroundColor:
-                        latestValues.powerState === 'DANGER'
+                        latestValues.powerState === 'ERROR'
                           ? '#d9534f'
                           : latestValues.powerState === 'WARNING'
                             ? '#f0ad4e'
@@ -253,7 +253,7 @@ function Dashboard() {
                     className={styles.voltageState}
                     style={{
                       backgroundColor:
-                        latestValues.voltageState === 'DANGER'
+                        latestValues.voltageState === 'ERROR'
                           ? '#d9534f'
                           : latestValues.voltageState === 'WARNING'
                             ? '#f0ad4e'
@@ -279,7 +279,7 @@ function Dashboard() {
                     className={styles.temperatureState}
                     style={{
                       backgroundColor:
-                        latestValues.temperatureState === 'DANGER'
+                        latestValues.temperatureState === 'ERROR'
                           ? '#d9534f'
                           : latestValues.temperatureState === 'WARNING'
                             ? '#f0ad4e'

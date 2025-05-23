@@ -29,7 +29,7 @@ const getStatusLabelAndStyle = (state: string) => {
   const statusMap: Record<string, { label: string; style: string }> = {
     NORMAL: { label: "정상", style: styles.normal },
     WARNING: { label: "경고", style: styles.warning },
-    DANGER: { label: "위험", style: styles.danger },
+    ERROR: { label: "위험", style: styles.danger },
   };
   return statusMap[state] || { label: "알 수 없음", style: "" };
 };

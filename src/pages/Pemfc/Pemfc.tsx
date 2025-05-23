@@ -20,11 +20,11 @@ const Pemfc = () => {
 
   // PEMFC 상태 결정
   const determineState = (
-    powerState: 'NORMAL' | 'WARNING' | 'DANGER',
-    voltageState: 'NORMAL' | 'WARNING' | 'DANGER',
-    temperatureState: 'NORMAL' | 'WARNING' | 'DANGER'
-  ): 'NORMAL' | 'WARNING' | 'DANGER' => {
-    if (powerState === 'DANGER' || voltageState === 'DANGER' || temperatureState === 'DANGER' ) return 'DANGER';
+    powerState: 'NORMAL' | 'WARNING' | 'ERROR',
+    voltageState: 'NORMAL' | 'WARNING' | 'ERROR',
+    temperatureState: 'NORMAL' | 'WARNING' | 'ERROR'
+  ): 'NORMAL' | 'WARNING' | 'ERROR' => {
+    if (powerState === 'ERROR' || voltageState === 'ERROR' || temperatureState === 'ERROR' ) return 'ERROR';
     else if (powerState === 'WARNING' || voltageState === 'WARNING' || temperatureState === 'WARNING') return 'WARNING';
     return 'NORMAL';
   };
@@ -109,7 +109,7 @@ const Pemfc = () => {
     setTotalPemfcCount(pemfcData.length);
     setNormalCount(pemfcData.filter((item) => item.state === 'NORMAL').length);
     setWarningCount(pemfcData.filter((item) => item.state === 'WARNING').length);
-    setDangerCount(pemfcData.filter((item) => item.state === 'DANGER').length);
+    setDangerCount(pemfcData.filter((item) => item.state === 'ERROR').length);
   }, [pemfcData]);
 
   // leaflet 지도 초기화 - O
@@ -375,7 +375,7 @@ const Pemfc = () => {
             <div className={styles.statusBoxContainer}>
               <StatusCard label="정상" count={normalCount} type="normal" styles={styles} /> {/* 정상 카드 */}
               <StatusCard label="경고" count={warningCount} type="warning" styles={styles} /> {/* 경고 카드 */}
-              <StatusCard label="위험" count={dangerCount} type="danger" styles={styles} /> {/* 위험 카드 */}
+              <StatusCard label="위험" count={dangerCount} type="error" styles={styles} /> {/* 위험 카드 */}
             </div>
           </div>
 

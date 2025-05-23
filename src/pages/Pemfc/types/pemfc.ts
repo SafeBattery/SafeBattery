@@ -6,8 +6,8 @@ export interface PemfcInstance {
   manufacturedDate: string; 
   lat: number;
   lng: number;
-  powerState: 'NORMAL' | 'WARNING' | 'DANGER';
-  voltageState: 'NORMAL' | 'WARNING' | 'DANGER';
-  temperatureState: 'NORMAL' | 'WARNING' | 'DANGER';
-  state: 'NORMAL' | 'WARNING' | 'DANGER';
+  powerState: 'NORMAL' | 'WARNING' | 'ERROR';
+  voltageState: 'NORMAL' | 'WARNING' | 'ERROR';
+  temperatureState: 'NORMAL' | 'WARNING' | 'ERROR';
+  state: 'NORMAL' | 'WARNING' | 'ERROR';
 }
