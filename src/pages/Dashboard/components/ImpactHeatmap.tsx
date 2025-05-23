@@ -65,7 +65,7 @@ export default function ImpactHeatmap({ selectedGroup }: ImpactHeatmapProps) {
 
     api.get(`/api/pemfc/${id}/dynamask/${selectedGroup}/recent`)
     .then(response => {
-      console.log(`다이나마스크 데이터 호출 성공: /api/pemfc/${id}/dynamask/${selectedGroup}/recent`);
+      console.log(`다이나마스크 데이터 호출 성공: http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/dynamask/${selectedGroup}/recent`);
       const json = response.data;
 
       if (!json?.value || !Array.isArray(json.value)) return;
