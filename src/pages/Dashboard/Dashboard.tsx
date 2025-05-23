@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './Dashboard.module.css';
 import { LineChart, LineCharts, DynamaskModal, TrendModal } from './components'
-import axios from 'axios';
+import api from '../../api/axiosInstance';
 import { ToggleGroup } from './components/ToggleGroup/ToggleGroup';
 
 function Dashboard() {
@@ -91,8 +91,8 @@ function Dashboard() {
   // CSV 다운로드
   const handleCsvDownload = async () => {
   try {
-    const response = await axios.get(
-      `http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/csv`,
+    const response = await api.get(
+      `/api/pemfc/${id}/csv`,
       { responseType: 'blob' }
     );
 
@@ -106,7 +106,7 @@ function Dashboard() {
     a.remove();
     window.URL.revokeObjectURL(url);
 
-    console.log(`CSV 다운로드 성공! : http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/csv`); 
+    console.log(`CSV 다운로드 성공! : /api/pemfc/${id}/csv`); 
   } catch (error) {
     console.error('CSV 다운로드 실패:', error);
   }
@@ -116,8 +116,8 @@ function Dashboard() {
   useEffect(() => {
     if (!id) return;
 
-    axios
-      .get(`http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}`)
+    api
+      .get(`/api/pemfc/${id}`)
       .then(response => {
         console.log('모델 이름 API 호출 성공:', response.data.modelName); 
         setModelName(response.data.modelName);
@@ -137,9 +137,9 @@ function Dashboard() {
   useEffect(() => {
     if (!id) return;
 
-    axios.get(`http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/record/recent600`)
+    api.get(`/api/pemfc/${id}/record/recent600`)
       .then(response => {
-        console.log(`최근 센서 데이터 API 호출 성공!: http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/record/recent600`);
+        console.log(`최근 센서 데이터 API 호출 성공!: /api/pemfc/${id}/record/recent600`);
 
         const data = response.data;
         if (Array.isArray(data) && data.length > 0) {

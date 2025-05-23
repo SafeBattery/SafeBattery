@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { PemfcInstance } from "../types/pemfc";
 import { useNavigate } from "react-router-dom";
+import api from "../../../api/axiosInstance";
 
 interface PemfcRowProps {
   item: PemfcInstance;
@@ -39,9 +40,9 @@ const PemfcRow: React.FC<PemfcRowProps> = ({
   useEffect(() => {
     if (!item.clientId) return;
 
-    fetch(`http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/client/${item.clientId}/name`)
-      .then(res => res.text())
-      .then(name => setClientName(name))
+    api
+      .get(`/api/client/${item.clientId}/name`)
+      .then(res => setClientName(res.data))
       .catch(err => {
         console.error("클라이언트 이름 불러오기 실패:", err);
         setClientName("(알 수 없음)");

@@ -2,7 +2,7 @@ import * as d3 from "d3";
 import React, { useRef, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import styles from "../Dashboard.module.css";
-import axios from "axios";
+import api from '../../../api/axiosInstance';
 
 interface LineChartsProps {
   selectedGroup: string
@@ -95,13 +95,13 @@ function LineCharts({ selectedGroup }: LineChartsProps) {
   useEffect(() => {
     if (!id || !featureConfig) return;
 
-    axios
-      .get(`http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/dynamask/${featureConfig.apiPath}/recent`)
+    api
+      .get(`/api/pemfc/${id}/dynamask/${featureConfig.apiPath}/recent`)
       .then((response) => {
         const json = response.data;
         if (json?.value) {
           setMaskData(json.value);
-          console.log(`마스크 데이터 호출 성공: http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/dynamask/${featureConfig.apiPath}/recent`);
+          console.log(`마스크 데이터 호출 성공: /api/pemfc/${id}/dynamask/${featureConfig.apiPath}/recent`);
         } else {
           console.warn("마스크 데이터 형식이 예상과 다름:", json);
         }
@@ -116,12 +116,12 @@ function LineCharts({ selectedGroup }: LineChartsProps) {
   useEffect(() => {
   if (!id) return;
 
-  axios.get(`http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/record/recent600`)
+  api.get(`/api/pemfc/${id}/record/recent600`)
     .then(response => {
       const json = response.data;
       if (Array.isArray(json)) {
         setRecordData(json.reverse());
-        console.log(`최근 레코드 데이터 호출 성공: http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/record/recent600`);
+        console.log(`최근 레코드 데이터 호출 성공: /api/pemfc/${id}/record/recent600`);
       } else {
         console.warn("최근 레코드 데이터 형식이 예상과 다름:", json);
       }

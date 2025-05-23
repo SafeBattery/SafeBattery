@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../../api/axiosInstance";
 import styles from "../Pemfc.module.css";
 
 type Pemfc = {
@@ -46,21 +46,20 @@ const RankRow = ({ selectedGroup }: RankRowProps) => {
   useEffect(() => {
     const fetchRankData = async () => {
       const endpoint = getEndpoint(selectedGroup);
-      const url = `http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/rank/${endpoint}`;
 
       try {
         setLoading(true);
         setError(null);
 
-        const response = await axios.get<RankDataItem[]>(url);
+        const response = await api.get<RankDataItem[]>(`/api/rank/${endpoint}`);
         const top3 = response.data
           .sort((a, b) => b.errorRate - a.errorRate)
           .slice(0, 3);
 
         setRankData(top3);
-        console.log(`데이터 가져오기 성공: ${url}`);
+        console.log(`데이터 가져오기 성공: /api/rank/${endpoint}`);
       } catch (err) {
-        console.error(`데이터 요청 실패: ${url}`, err);
+        console.error(`데이터 요청 실패:`, err);
         setError("데이터를 불러오는 중 오류가 발생했습니다.");
         setRankData([]);
       } finally {

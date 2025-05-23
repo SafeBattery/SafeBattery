@@ -2,7 +2,7 @@ import * as d3 from "d3";
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import styles from "../Dashboard.module.css";
-import axios from "axios";
+import api from '../../../api/axiosInstance';
 
 interface LineChartProps {
   selectedGroup: "pw" | "u_totV" | "t_3";
@@ -17,10 +17,15 @@ interface PredictionPoint {
   state: string;
 }
 
-const predictionApiMap = {
+const predictionApiMap1 = {
   pw: "power",
   u_totV: "voltage",
   t_3: "temperature",
+} as const;
+const predictionApiMap2 = {
+  pw: "recent100",
+  u_totV: "recent100",
+  t_3: "recent20",
 } as const;
 
 const stateFieldMap = {
@@ -70,13 +75,13 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
   if (!id) return;
   setData(null);
 
-  axios
-    .get(`http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/record/recent600`)
+  api
+    .get(`/api/pemfc/${id}/record/recent600`)
     .then((response) => {
       const arr = response.data;
       if (Array.isArray(arr)) {
         setData(arr.reverse());
-        console.log(`최근 600개 레코드 데이터 호출 성공!: http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/record/recent600`);
+        console.log(`최근 600개 레코드 데이터 호출 성공!: /api/pemfc/${id}/record/recent600`);
       } else {
         console.warn("응답이 배열이 아님:", arr);
       }
@@ -90,11 +95,13 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
   useEffect(() => {
   if (!id) return;
 
-  const endpoint = predictionApiMap[selectedGroup];
+  const endpoint1 = predictionApiMap1[selectedGroup];
+  const endpoint2 = predictionApiMap2[selectedGroup];
+
   setPredictionData(null);
 
-  axios
-    .get(`http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/predictions/${endpoint}`)
+  api
+    .get(`/api/pemfc/${id}/predictions/${endpoint1}/${endpoint2}`)
     .then((response) => {
       const arr = response.data;
       if (Array.isArray(arr)) {
@@ -103,7 +110,7 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
           state: d.state,
         }));
         setPredictionData(processed);
-        console.log(`예측 데이터 호출 성공!: http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/predictions/${endpoint}`);
+        console.log(`예측 데이터 호출 성공!: /api/pemfc/${id}/predictions/${endpoint1}/${endpoint2}`);
       } else {
         console.warn("예측 데이터 응답이 배열이 아님:", arr);
       }

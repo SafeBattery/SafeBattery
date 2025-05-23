@@ -2,8 +2,6 @@ import React from 'react';
 import styles from '../Dashboard.module.css';
 import dynamaskChart from '../assets/dynamask_chart.png';
 import dynamaskChart_1 from '../assets/dynamask_chart_1.png';
-import dynamaskChart_2 from '../assets/dynamask_chart_2.png';
-import LineCharts from './LineCharts';
 
 interface DynamaskModalProps {
   onClose: () => void;

@@ -1,5 +1,3 @@
-// src/components/PemfcRegistrationModal.tsx
-
 import React, { useState } from 'react';
 import styles from '../Pemfc.module.css';
 

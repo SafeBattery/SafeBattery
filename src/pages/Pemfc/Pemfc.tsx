@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { PemfcInstance } from './types/pemfc';
 import { StatusCard, PemfcRow, RegistrationModal, RankRow } from './components';
-import axios from 'axios'
+import api from "../../api/axiosInstance";
 import L from 'leaflet';
 import locationIcon from './assets/location_on.png';
 import styles from './Pemfc.module.css';
@@ -53,12 +53,12 @@ const Pemfc = () => {
   useEffect(() => {
   const fetchPemfcData = async () => {
     try {
-      const response = await axios.get(
-        'http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/client/1/pemfc/all'
+      const response = await api.get(
+        '/api/client/1/pemfc/all'
       );
 
       const rawData = response.data;
-      console.log('PEMFC API 데이터 가져오기 성공! : http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/client/1/pemfc/all'); 
+      console.log('PEMFC API 데이터 가져오기 성공! : /api/client/1/pemfc/all'); 
 
       const processedData: PemfcInstance[] = rawData.map((item: any) => {
         const state = determineState(item.powerState, item.voltageState, item.temperatureState);
@@ -90,11 +90,11 @@ const Pemfc = () => {
   useEffect(() => {
   const fetchClientName = async () => {
     try {
-      const response = await axios.get(
-        'http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/client/1/name'
+      const response = await api.get(
+        '/api/client/1/name'
       );
 
-      console.log('클라이언트 이름 가져오기 성공!: http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/client/1/name');
+      console.log('클라이언트 이름 가져오기 성공!: /api/client/1/name');
       setClientName(response.data);
     } catch (error) {
       console.error('클라이언트 이름 가져오기 실패:', error);
@@ -179,9 +179,9 @@ const Pemfc = () => {
         voltageState: 'NORMAL',
         temperatureState: 'NORMAL',
       };
-      await axios.post('http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/', payload);
+      await api.post('/api/pemfc/', payload);
       alert('PEMFC 등록 성공!');
-      console.log('PEMFC 등록 성공!: http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/')
+      console.log('PEMFC 등록 성공!: /api/pemfc/')
       setIsRegistrationModalOpen(false);
     } catch (error) {
       alert('등록 실패');
@@ -192,13 +192,13 @@ const Pemfc = () => {
   // 모든 PEMFC 데이터 재조회 - O
   const handleReload = async () => {
   try {
-    const response = await axios.get(
-      `http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/client/1/pemfc/all`
+    const response = await api.get(
+      `/api/client/1/pemfc/all`
     );
     const rawData = response.data;
 
     if (Array.isArray(rawData)) {
-      console.log('PEMFC 데이터 재조회 성공: http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/client/1/pemfc/all'); 
+      console.log('PEMFC 데이터 재조회 성공: /api/client/1/pemfc/all'); 
 
       const mappedData = rawData.map((item: any) => ({
         id: item.id,
@@ -228,7 +228,7 @@ const Pemfc = () => {
   if (!confirmed) return;
 
   try {
-    const response = await axios.get("http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/client/1/pemfc/all");
+    const response = await api.get("/api/client/1/pemfc/all");
     const rawData = response.data;
 
     if (!Array.isArray(rawData) || rawData.length === 0) {
@@ -241,7 +241,7 @@ const Pemfc = () => {
     await Promise.all(
       rawData.map(async (item: { id: number }) => {
         try {
-          await axios.delete(`http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${item.id}/delete`);
+          await api.delete(`/api/pemfc/${item.id}/delete`);
           deletableIds.push(item.id);
         } catch (error) {
           console.warn(`PEMFC ${item.id} 삭제 실패 (삭제 불가 대상일 수 있음).`);
@@ -299,7 +299,7 @@ const Pemfc = () => {
 
   try {
     // DELETE 요청
-    await axios.delete(`http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${pemfcId}/delete`);
+    await api.delete(`/api/pemfc/${pemfcId}/delete`);
 
     // UI 상태 동기화
     const updatedData = [...pemfcData];
