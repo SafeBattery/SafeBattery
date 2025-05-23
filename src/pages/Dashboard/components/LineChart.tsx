@@ -81,7 +81,7 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
       const arr = response.data;
       if (Array.isArray(arr)) {
         setData(arr.reverse());
-        console.log(`최근 600개 레코드 데이터 호출 성공!: /api/pemfc/${id}/record/recent600`);
+        console.log(`최근 600개 레코드 데이터 호출 성공!: http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/record/recent600`);
       } else {
         console.warn("응답이 배열이 아님:", arr);
       }
@@ -105,10 +105,13 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
     .then((response) => {
       const arr = response.data;
       if (Array.isArray(arr)) {
-        const processed = arr.map((d: any) => ({
-          predictedValue: +d.predictedValue,
-          state: d.state,
-        }));
+        const processed = arr
+          .slice()        // 원본 배열 유지
+          .reverse()      // 역순으로 정렬
+          .map((d: any) => ({
+            predictedValue: +d.predictedValue,
+            state: d.state,
+          }));
         setPredictionData(processed);
         console.log(`예측 데이터 호출 성공!: /api/pemfc/${id}/predictions/${endpoint1}/${endpoint2}`);
       } else {
@@ -216,16 +219,16 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
     }));
 
     chartArea
-      .selectAll("line.state")
-      .data(stateLines)
-      .join("line")
-      .attr("x1", (d) => x(d.index))
-      .attr("x2", (d) => x(d.index))
-      .attr("y1", 0)
-      .attr("y2", height)
-      .attr("stroke", (d) => stateColor(d.state))
-      .attr("stroke-width", 1)
-      .attr("stroke-opacity", 0.15);
+    .selectAll("line.state")
+    .data(stateLines)
+    .join("line")
+    .attr("x1", (d) => x(d.index))
+    .attr("x2", (d) => x(d.index))
+    .attr("y1", 0)
+    .attr("y2", height)
+    .attr("stroke", (d) => stateColor(d.state))
+    .attr("stroke-width", (d) => (d.state === "WARNING" || d.state === "ERROR" ? 3 : 1))  // 여기서 굵기 조절
+    .attr("stroke-opacity", (d) => (d.state === "WARNING" || d.state === "ERROR" ? 1 : 0.15));
 
     // Actual data line
     const actualValues = data.map((d) => +d[selectedGroup]);
@@ -255,8 +258,8 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
         .attr("y1", 0)
         .attr("y2", height)
         .attr("stroke", (d) => stateColor(d.state))
-        .attr("stroke-width", 1)
-        .attr("stroke-opacity", 0.15);
+        .attr("stroke-width", 1)  // 여기서 굵기 조절
+        .attr("stroke-opacity", (d) => (d.state === "WARNING" || d.state === "ERROR" ? 1 : 0.15));
 
       const predLine = d3
         .line<PredictionPoint>()
