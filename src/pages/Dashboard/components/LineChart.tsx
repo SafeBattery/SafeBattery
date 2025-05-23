@@ -227,8 +227,8 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
     .attr("y1", 0)
     .attr("y2", height)
     .attr("stroke", (d) => stateColor(d.state))
-    .attr("stroke-width", (d) => (d.state === "WARNING" || d.state === "ERROR" ? 3 : 1))  // 여기서 굵기 조절
-    .attr("stroke-opacity", (d) => (d.state === "WARNING" || d.state === "ERROR" ? 1 : 0.15));
+    .attr("stroke-width", 1)  // 여기서 굵기 조절 // 여기서 굵기 조절
+    .attr("stroke-opacity", (d) => (d.state === "WARNING" || d.state === "ERROR" ? 0.6 : 0.15));
 
     // Actual data line
     const actualValues = data.map((d) => +d[selectedGroup]);
@@ -259,7 +259,7 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
         .attr("y2", height)
         .attr("stroke", (d) => stateColor(d.state))
         .attr("stroke-width", 1)  // 여기서 굵기 조절
-        .attr("stroke-opacity", (d) => (d.state === "WARNING" || d.state === "ERROR" ? 1 : 0.15));
+        .attr("stroke-opacity", (d) => (d.state === "WARNING" || d.state === "ERROR" ? 0.6 : 0.15));
 
       const predLine = d3
         .line<PredictionPoint>()
