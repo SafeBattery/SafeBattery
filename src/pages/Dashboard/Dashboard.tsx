@@ -40,7 +40,7 @@ function Dashboard() {
     t_3: null as number | null,
   });
 
-   // 가장 최근 센서 데이터값
+   // 가장 최근 pemfc 상태
    const [latestStates, setLatestStates] = useState({
     powerState: null as 'NORMAL' | 'WARNING' | 'ERROR' | null,
     voltageState: null as 'NORMAL' | 'WARNING' | 'ERROR' | null,
@@ -113,28 +113,39 @@ function Dashboard() {
   }
 };
  
-  // 모델 상태
+  // pemfc 상태
   useEffect(() => {
-  if (!id) return;
-
-  api
-    .get(`/api/pemfc/${id}`)
-    .then(response => {
-      const { modelName, powerState, voltageState, temperatureState } = response.data;
-      console.log('모델 이름 및 상태 API 호출 성공:', response.data);
-
-      setModelName(modelName);
-      setLatestStates(prev => ({
-        ...prev,
-        powerState,
-        voltageState,
-        temperatureState,
-      }));
-    })
-    .catch(error => {
-      console.error("모델 이름 및 상태 API 호출 실패:", error);
-    });
-}, [id]);
+    if (!id) return;
+  
+    const fetchPemfcState = () => {
+      api
+        .get(`/api/pemfc/${id}`)
+        .then(response => {
+          const { modelName, powerState, voltageState, temperatureState } = response.data;
+          console.log('모델 이름 및 상태 API 호출 성공:', response.data);
+  
+          setModelName(modelName);
+          setLatestStates(prev => ({
+            ...prev,
+            powerState,
+            voltageState,
+            temperatureState,
+          }));
+        })
+        .catch(error => {
+          console.error("모델 이름 및 상태 API 호출 실패:", error);
+        });
+    };
+  
+    // 첫 fetch
+    fetchPemfcState();
+  
+    // 5초마다 반복 fetch
+    const interval = setInterval(fetchPemfcState, 5000);
+  
+    // 컴포넌트 언마운트 시 인터벌 정리
+    return () => clearInterval(interval);
+  }, [id]);
 
   // 시간 업데이트
   useEffect(() => {
