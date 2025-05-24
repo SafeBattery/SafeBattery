@@ -38,6 +38,10 @@ function Dashboard() {
     pw: null as number | null,
     u_totV: null as number | null,
     t_3: null as number | null,
+  });
+
+   // 가장 최근 센서 데이터값
+   const [latestStates, setLatestStates] = useState({
     powerState: null as 'NORMAL' | 'WARNING' | 'ERROR' | null,
     voltageState: null as 'NORMAL' | 'WARNING' | 'ERROR' | null,
     temperatureState: null as 'NORMAL' | 'WARNING' | 'ERROR' | null,
@@ -49,9 +53,6 @@ function Dashboard() {
 
   const [selectedGroup1, setSelectedGroup1] = useState<AllowedGroup>("pw");
 
-  const [showPowerModal, setShowPowerModal] = useState(false);
-  const [showVoltageModal, setShowVoltageModal] = useState(false);
-  const [showTemperatureModal, setShowTemperatureModal] = useState(false);
   const [showTrendModal, setShowTrendModal] = useState(false);
   const [showDynamaskModal, setShowDynamaskModal] = useState(false);
 
@@ -111,21 +112,29 @@ function Dashboard() {
     console.error('CSV 다운로드 실패:', error);
   }
 };
-
-  // 모델명 API 호출
+ 
+  // 모델 상태
   useEffect(() => {
-    if (!id) return;
+  if (!id) return;
 
-    api
-      .get(`/api/pemfc/${id}`)
-      .then(response => {
-        console.log('모델 이름 API 호출 성공:', response.data.modelName); 
-        setModelName(response.data.modelName);
-      })
-      .catch(error => {
-        console.error("모델 이름 API 호출 실패:", error);
-      });
-  }, [id]);
+  api
+    .get(`/api/pemfc/${id}`)
+    .then(response => {
+      const { modelName, powerState, voltageState, temperatureState } = response.data;
+      console.log('모델 이름 및 상태 API 호출 성공:', response.data);
+
+      setModelName(modelName);
+      setLatestStates(prev => ({
+        ...prev,
+        powerState,
+        voltageState,
+        temperatureState,
+      }));
+    })
+    .catch(error => {
+      console.error("모델 이름 및 상태 API 호출 실패:", error);
+    });
+}, [id]);
 
   // 시간 업데이트
   useEffect(() => {
@@ -134,31 +143,59 @@ function Dashboard() {
   }, []);
 
   // 최근 센서 데이터 API 호출
+  // useEffect(() => {
+  //   if (!id) return;
+
+  //   api.get(`/api/pemfc/${id}/record/recent600`)
+  //     .then(response => {
+  //       console.log(`최근 센서 데이터 API 호출 성공!: /api/pemfc/${id}/record/recent600`);
+
+  //       const data = response.data;
+  //       if (Array.isArray(data) && data.length > 0) {
+  //         const last = data[0];
+
+  //         setLatestValues({
+  //           pw: last.pw,
+  //           u_totV: last.u_totV,
+  //           t_3: last.t_3,
+  //           powerState: last.powerState,
+  //           voltageState: last.voltageState,
+  //           temperatureState: last.temperatureState
+  //         });
+  //       }
+  //     })
+  //     .catch(error => {
+  //       console.error("최근 센서 데이터 API 호출 실패:", error);
+  //     });
+  // }, [id]);
   useEffect(() => {
     if (!id) return;
-
-    api.get(`/api/pemfc/${id}/record/recent600`)
-      .then(response => {
-        console.log(`최근 센서 데이터 API 호출 성공!: /api/pemfc/${id}/record/recent600`);
-
-        const data = response.data;
-        if (Array.isArray(data) && data.length > 0) {
-          const last = data[0];
-
-          setLatestValues({
-            pw: last.pw,
-            u_totV: last.u_totV,
-            t_3: last.t_3,
-            powerState: last.powerState,
-            voltageState: last.voltageState,
-            temperatureState: last.temperatureState
-          });
-        }
-      })
-      .catch(error => {
-        console.error("최근 센서 데이터 API 호출 실패:", error);
-      });
+  
+    const fetchLatest = () => {
+      api.get(`/api/pemfc/${id}/record/recent600`)
+        .then(response => {
+          console.log(`최근 센서 데이터 API 호출 성공!: /api/pemfc/${id}/record/recent600`);
+          const data = response.data;
+          if (Array.isArray(data) && data.length > 0) {
+            const last = data[0]; //ok
+            setLatestValues({
+              pw: last.pw,
+              u_totV: last.u_totV,
+              t_3: last.t_3,
+            });
+          }
+        })
+        .catch(error => {
+          console.error("최근 센서 데이터 API 호출 실패:", error);
+        });
+    };
+  
+    fetchLatest(); 
+    const intervalId = setInterval(fetchLatest, 5000); 
+  
+    return () => clearInterval(intervalId); 
   }, [id]);
+  
 
   const [selectedFeatures, setSelectedFeatures] = React.useState<string[]>([]);
 
@@ -166,9 +203,9 @@ function Dashboard() {
   function toggleFeature(feature: string) {
     setSelectedFeatures(prev => {
       if (prev.includes(feature)) {
-        return prev.filter(f => f !== feature); // 체크 해제 시 배열에서 제거
+        return prev.filter(f => f !== feature); 
       } else {
-        return [...prev, feature]; // 체크 시 배열에 추가
+        return [...prev, feature]; 
       }
     });
   }
@@ -225,9 +262,9 @@ function Dashboard() {
                     className={styles.powerState}
                     style={{
                       backgroundColor:
-                        latestValues.powerState === 'ERROR'
+                        latestStates.powerState === 'ERROR'
                           ? '#d9534f'
-                          : latestValues.powerState === 'WARNING'
+                          : latestStates.powerState === 'WARNING'
                             ? '#f0ad4e'
                             : '#14ca74',
                     }}
@@ -253,9 +290,9 @@ function Dashboard() {
                     className={styles.voltageState}
                     style={{
                       backgroundColor:
-                        latestValues.voltageState === 'ERROR'
+                        latestStates.voltageState === 'ERROR'
                           ? '#d9534f'
-                          : latestValues.voltageState === 'WARNING'
+                          : latestStates.voltageState === 'WARNING'
                             ? '#f0ad4e'
                             : '#14ca74',
                     }}
@@ -279,9 +316,9 @@ function Dashboard() {
                     className={styles.temperatureState}
                     style={{
                       backgroundColor:
-                        latestValues.temperatureState === 'ERROR'
+                        latestStates.temperatureState === 'ERROR'
                           ? '#d9534f'
-                          : latestValues.temperatureState === 'WARNING'
+                          : latestStates.temperatureState === 'WARNING'
                             ? '#f0ad4e'
                             : '#14ca74',
                     }}
@@ -349,4 +386,3 @@ function Dashboard() {
 }
 
 export default Dashboard;
-

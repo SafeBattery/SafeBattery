@@ -34,7 +34,7 @@ const PemfcRow: React.FC<PemfcRowProps> = ({
       ? styles.normal
       : item.state === 'WARNING'
       ? styles.warning
-      : styles.danger;
+      : styles.error;
 
   // 클라이언트 이름 불러오기
   useEffect(() => {

@@ -43,7 +43,7 @@ const stateColor = (state?: string) =>
     ? "#d9534f"
     : "#ccc";
 
-const margin = { top: 20, right: 50, bottom: 50, left: 50 };
+const margin = { top: 20, right: 50, bottom: 30, left: 50 };
 
 export default function LineChart({ selectedGroup }: LineChartProps) {
   const { id } = useParams<{ id: string }>();
@@ -70,66 +70,7 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
     return () => ro.disconnect();
   }, []);
 
-  // // Fetch recent record data
-  // const fetchRecordData = useCallback(() => {
-  //   if (!id) return;
-
-  //   api.get(`/api/pemfc/${id}/record/recent600`)
-  //     .then((response) => {
-  //       const arr = response.data;
-  //       if (Array.isArray(arr)) {
-  //         setData(arr.reverse());
-  //         console.log(`(그래프) 최근 600개 레코드 데이터 호출 성공`);
-  //       } else {
-  //         console.warn("응답이 배열이 아님:", arr);
-  //       }
-  //     })
-  //     .catch((error) => {
-  //       console.error("그래프 레코드 데이터 호출 실패:", error);
-  //     });
-  // }, [id]);
-
-  // useEffect(() => {
-  //   fetchRecordData(); // 첫 실행
-  //   const interval = setInterval(fetchRecordData, 5000); // 5초마다 실행
-
-  //   return () => clearInterval(interval); // 언마운트 시 정리
-  // }, [fetchRecordData]);
-
-  // // Fetch prediction data
-  // const fetchPredictionData = useCallback(() => {
-  //   if (!id) return;
-
-  //   const endpoint1 = predictionApiMap1[selectedGroup];
-  //   const endpoint2 = predictionApiMap2[selectedGroup];
-
-  //   setPredictionData(null);
-
-  //   api
-  //     .get(`/api/pemfc/${id}/predictions/${endpoint1}/${endpoint2}`)
-  //     .then((response) => {
-  //       const arr = response.data;
-  //       if (Array.isArray(arr)) {
-  //         const processed = arr.map((d: any) => ({
-  //           predictedValue: +d.predictedValue,
-  //           state: d.state,
-  //         }));
-  //         setPredictionData(processed);
-  //         console.log(`예측 데이터 호출 성공!: /api/pemfc/${id}/predictions/${endpoint1}/${endpoint2}`);
-  //       } else {
-  //         console.warn("예측 데이터 응답이 배열이 아님:", arr);
-  //       }
-  //     })
-  //     .catch((error) => {
-  //       console.error("예측 데이터 호출 실패:", error);
-  //     });
-  // }, [id, selectedGroup]);
-
-  // useEffect(() => {
-  //   fetchPredictionData(); // 최초 실행
-  //   const interval = setInterval(fetchPredictionData, 5000);
-  //   return () => clearInterval(interval); // cleanup
-  // }, [fetchPredictionData]);
+  // Fetch recent record, prediction data
   const fetchAllData = useCallback(() => {
     if (!id) return;
   
@@ -140,7 +81,7 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
   
     Promise.all([recordRequest, predictionRequest])
       .then(([recordRes, predictionRes]) => {
-        // 📌 실측 데이터 처리
+        // 실측 데이터 처리
         const recordArr = recordRes.data;
         if (Array.isArray(recordArr)) {
           setData(recordArr.reverse());
@@ -152,7 +93,8 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
         // 예측 데이터 처리
         const predictionArr = predictionRes.data;
         if (Array.isArray(predictionArr)) {
-          const processed = predictionArr.map((d: any) => ({
+          const processed = predictionArr.reverse()
+          .map((d: any) => ({
             predictedValue: +d.predictedValue,
             state: d.state,
           }));
@@ -171,59 +113,7 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
     fetchAllData(); // 최초 호출
     const interval = setInterval(fetchAllData, 5000); // 5초마다
     return () => clearInterval(interval);
-  }, [fetchAllData]);  
-// =======
-//   if (!id) return;
-//   setData(null);
-
-//   api
-//     .get(`/api/pemfc/${id}/record/recent600`)
-//     .then((response) => {
-//       const arr = response.data;
-//       if (Array.isArray(arr)) {
-//         setData(arr.reverse());
-//         console.log(`최근 600개 레코드 데이터 호출 성공!: http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/record/recent600`);
-//       } else {
-//         console.warn("응답이 배열이 아님:", arr);
-//       }
-//     })
-//     .catch((error) => {
-//       console.error("최근 레코드 데이터 호출 실패:", error);
-//     });
-// }, [id]);
-
-//   // Fetch prediction data
-//   useEffect(() => {
-//   if (!id) return;
-
-//   const endpoint1 = predictionApiMap1[selectedGroup];
-//   const endpoint2 = predictionApiMap2[selectedGroup];
-
-//   setPredictionData(null);
-
-//   api
-//     .get(`/api/pemfc/${id}/predictions/${endpoint1}/${endpoint2}`)
-//     .then((response) => {
-//       const arr = response.data;
-//       if (Array.isArray(arr)) {
-//         const processed = arr
-//           .slice()        // 원본 배열 유지
-//           .reverse()      // 역순으로 정렬
-//           .map((d: any) => ({
-//             predictedValue: +d.predictedValue,
-//             state: d.state,
-//           }));
-//         setPredictionData(processed);
-//         console.log(`예측 데이터 호출 성공!: /api/pemfc/${id}/predictions/${endpoint1}/${endpoint2}`);
-//       } else {
-//         console.warn("예측 데이터 응답이 배열이 아님:", arr);
-//       }
-//     })
-//     .catch((error) => {
-//       console.error("예측 데이터 호출 실패:", error);
-//     });
-// }, [id, selectedGroup]);
-// >>>>>>> c36e3a4ee69c66aa69d955ed03a01bd960b7506e
+  }, [fetchAllData]);
 
   // Zoom behavior setup
   useEffect(() => {
@@ -300,62 +190,45 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
     const yDomain = d3.extent(allValues) as [number, number];
     const y = d3.scaleLinear().domain(yDomain).nice().range([height, 0]);
 
-    const defaultTicks = x.ticks(10); // 예: [580, 590, 600, 610, 620]
-    const extraTick = 599;
-    const allTicks = [...new Set([...defaultTicks, extraTick])];
+    const xAxis = d3
+      .axisBottom(x)
+      .tickSize(-height)
+      .tickPadding(10)
+      .tickFormat((d) => {
+        const label = Number(d) - 600;
+        if (label === 0) return ""; // 0 라벨 숨김
+        return label.toString();
+      });
 
-    // Axes
-    axisArea
-      .append("g")
-      .attr("transform", `translate(0,${height})`)
-      .call(
-        d3.axisBottom(x)
-          .tickSize(-height)
-          .tickPadding(10)
-          .tickValues(allTicks)
-          .tickFormat((d) => {
-            const index = d as number;
+    const xAxisG = axisArea.append("g").attr("transform", `translate(0,${height})`).call(xAxis);
+    xAxisG.selectAll("line").attr("stroke", "#ddd");
 
-            if (index === 599) return "현재";
-            if (index === 600) return ""; // 0 숨김
-            return `${index - 600}`;
-          })
-        )
-      .selectAll("line")
-      .attr("stroke", "#ccc")
+    const currentIndex = 599;
+    xAxisG
+      .append("text")
+      .attr("x", x(currentIndex))
+      .attr("y", 18) 
+      .attr("text-anchor", "middle")
+      .attr("font-weight", "bold")
+      .attr("fill", "#333")
+      .text("현재");
 
+    // // Axes
+    // axisArea
+    //   .append("g")
+    //   .attr("transform", `translate(0,${height})`)
+    //   .call(d3.axisBottom(x)
+    //     .tickSize(-height)
+    //     .tickPadding(10)
+    //     .tickFormat(d => `${Number(d) - 600}`))
+    //   .selectAll("line")
+    //   .attr("stroke", "#ddd");
 
     axisArea
       .append("g")
       .call(d3.axisLeft(y).tickSize(-width).tickPadding(10))
       .selectAll("line")
-      .attr("stroke", "#ccc");
-
-    axisArea.append("text")
-      .attr("class", "x label")
-      .attr("text-anchor", "end")
-      .attr("font-size", 12)
-      .attr("font-weight", '500')
-      .attr("x", width * 0.5 + 15)
-      .attr("y", height + 40) 
-      .text("Time");
-
-    axisArea.append("text")
-      .attr("class", "y label")
-      .attr("text-anchor", "end")
-      .attr("x", -150)
-      .attr("y", -50)
-      .attr("font-size", 12)
-      .attr("font-weight", '500')
-      .attr("dy", ".75em")
-      .attr("transform", "rotate(-90)")
-      .text(() => {
-        if (selectedGroup === "pw") return "PW";
-        if (selectedGroup === "u_totV") return "U_TOTV";
-        if (selectedGroup === "t_3") return "T_3";
-        return "";
-      });
-
+      .attr("stroke", "#ddd");
 
     // Background state bars (actual data)
     const stateLines = data.map((d, i) => ({
@@ -364,16 +237,16 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
     }));
 
     chartArea
-      .selectAll("line.state")
-      .data(stateLines)
-      .join("line")
-      .attr("x1", (d) => x(d.index))
-      .attr("x2", (d) => x(d.index))
-      .attr("y1", 0)
-      .attr("y2", height)
-      .attr("stroke", (d) => stateColor(d.state))
-      .attr("stroke-width", 1)  
-      .attr("stroke-opacity", (d) => (d.state === "WARNING" || d.state === "ERROR" ? 0.6 : 0.15));
+    .selectAll("line.state")
+    .data(stateLines)
+    .join("line")
+    .attr("x1", (d) => x(d.index))
+    .attr("x2", (d) => x(d.index))
+    .attr("y1", 0)
+    .attr("y2", height)
+    .attr("stroke", (d) => stateColor(d.state))
+    .attr("stroke-width", 1)  // 여기서 굵기 조절 // 여기서 굵기 조절
+    .attr("stroke-opacity", (d) => (d.state === "WARNING" || d.state === "ERROR" ? 0.6 : 0.15));
 
     // Actual data line
     const actualValues = data.map((d) => +d[selectedGroup]);
@@ -382,57 +255,6 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
       .x((_, i) => x(i))
       .y((d) => y(d));
 
-    
-
-    // Prediction lines
-    if (predictionData?.length) {
-       const predStart = data.length;
-
-       chartArea
-        .selectAll("line.pred-state")
-        .data(predictionData.map((d, i) => ({ index: predStart + i, state: d.state })))
-        .join("line")
-        .attr("x1", (d) => x(d.index))
-        .attr("x2", (d) => x(d.index))
-        .attr("y1", 0)
-        .attr("y2", height)
-        .attr("stroke", (d) => stateColor(d.state))
-        .attr("stroke-width", 1)  
-        .attr("stroke-opacity", (d) => (d.state === "WARNING" || d.state === "ERROR" ? 0.6 : 0.15));
-
-      const predLine = d3
-        .line<PredictionPoint>()
-        .x((_, i) => x(predStart + i))
-        .y((d) => y(d.predictedValue));
-
-      chartArea
-        .append("path")
-        .datum(predictionData)
-        .attr("fill", "none")
-        .attr("stroke", "gray")
-        .attr("stroke-dasharray", "4 4")
-        .attr("stroke-width", 1)
-        .attr("d", predLine);
-
-      if (data.length > 0 && predictionData?.length > 0) {
-        const lastActualIndex = data.length - 1;
-        const firstPredictedIndex = data.length;
-
-        const lastActualValue = +data[lastActualIndex][selectedGroup];
-        const firstPredictedValue = predictionData[0].predictedValue;
-
-        chartArea.append("line")
-          .attr("x1", x(lastActualIndex))
-          .attr("y1", y(lastActualValue))
-          .attr("x2", x(firstPredictedIndex))
-          .attr("y2", y(firstPredictedValue))
-          .attr("fill", "none")
-          .attr("stroke", "gray")
-          .attr("stroke-dasharray", "4 4")
-          .attr("stroke-width", 2);
-          
-      }
-    }
     chartArea
       .append("path")
       .datum(actualValues)
@@ -440,6 +262,42 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
       .attr("stroke", d3.schemeSet2[["pw", "u_totV", "t_3"].indexOf(selectedGroup)])
       .attr("stroke-width", 3)
       .attr("d", line);
+
+    // Prediction lines
+    if (predictionData?.length) {
+  const predStart = data.length - 1; // 마지막 실제 데이터 인덱스부터 시작
+
+  // 실제 마지막 값 + 예측 값 배열 생성 (연결 선을 위해)
+  const predLineData = [actualValues[actualValues.length - 1], ...predictionData.map(d => d.predictedValue)];
+
+  // 선 생성기 타입은 number로
+  const predLine = d3.line<number>()
+    .x((_, i) => x(predStart + i))
+    .y(d => y(d));
+
+  // 예측 상태 배경선 (x 인덱스 +1 부터 시작)
+  chartArea
+    .selectAll("line.pred-state")
+    .data(predictionData.map((d, i) => ({ index: predStart + 1 + i, state: d.state })))
+    .join("line")
+    .attr("x1", (d) => x(d.index))
+    .attr("x2", (d) => x(d.index))
+    .attr("y1", 0)
+    .attr("y2", height)
+    .attr("stroke", (d) => stateColor(d.state))
+    .attr("stroke-width", 1)
+    .attr("stroke-opacity", (d) => (d.state === "WARNING" || d.state === "ERROR" ? 0.6 : 0.15));
+
+  // 실제 마지막 값과 예측 값을 연결하는 선 그리기
+  chartArea
+    .append("path")
+    .datum(predLineData)  // predictionData가 아니라 predLineData를 넘김
+    .attr("fill", "none")
+    .attr("stroke", "gray")
+    .attr("stroke-dasharray", "4 4")
+    .attr("stroke-width", 2)
+    .attr("d", predLine);
+}
 
     // Focus group: vertical + horizontal line for hover effect
     const focus = chartArea.append("g").style("display", "none");
@@ -450,7 +308,7 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
       .attr("y1", 0)
       .attr("y2", height)
       .attr("stroke", "#666")
-      .attr("stroke-width", 0.5)
+      .attr("stroke-width", 1)
       .attr("stroke-dasharray", "3 3");
 
     const horizontalLine = focus
@@ -514,14 +372,12 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
             const cy = y(val);
             horizontalLine.attr("y1", cy).attr("y2", cy);
 
-            const adjustedXLabel = i - 599;
-
             xLabel
               .attr("x", cx + margin.left)
               .attr("y", height + margin.top + 18)
               .attr("font-size", 10)
               .attr("font-weight", 900)
-              .text(`${adjustedXLabel}`);
+              .text(`${i}`);
 
             yLabel
               .attr("x", margin.left - 8)
@@ -537,7 +393,7 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
   return (
     <div
       className={styles.lineChartContainer}
-      style={{ position: "relative", width: "100%", height: "95%" }}
+      style={{ position: "relative", width: "100%", height: "30%" }}
       ref={containerRef}
     >
       <svg ref={svgRef} style={{ display: "block", width: "100%", height: "100%" }} />

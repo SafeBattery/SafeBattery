@@ -91,46 +91,41 @@ function LineCharts({ selectedGroup }: LineChartsProps) {
     return () => resizeObserver.disconnect();
   }, []);
 
-  // Fetch maskData when id or selectedGroup changes
+  //fetch mask & record data
   useEffect(() => {
     if (!id || !featureConfig) return;
-
-    api
-      .get(`/api/pemfc/${id}/dynamask/${featureConfig.apiPath}/recent`)
-      .then((response) => {
-        const json = response.data;
-        if (json?.value) {
-          setMaskData(json.value);
-          console.log(`마스크 데이터 호출 성공: /api/pemfc/${id}/dynamask/${featureConfig.apiPath}/recent`);
+  
+    const fetchData = () => {
+      const maskUrl = `/api/pemfc/${id}/dynamask/${featureConfig.apiPath}/recent`;
+      const recordUrl = `/api/pemfc/${id}/record/recent600`;
+  
+      Promise.all([
+        api.get(maskUrl),
+        api.get(recordUrl)
+      ])
+      .then(([maskRes, recordRes]) => {
+        const maskJson = maskRes.data;
+        const recordJson = recordRes.data;
+  
+        if (maskJson?.value && Array.isArray(recordJson)) {
+          setMaskData(maskJson.value);
+          setRecordData(recordJson.reverse());
+          console.log(`동시 호출 성공: ${maskUrl}, ${recordUrl}`);
         } else {
-          console.warn("마스크 데이터 형식이 예상과 다름:", json);
+          console.warn("응답 형식 오류:", { maskJson, recordJson });
         }
       })
-      .catch((error) => {
-        console.error("마스크 데이터 호출 실패:", error);
+      .catch(error => {
+        console.error("동시 fetch 실패:", error);
       });
+    };
+  
+    fetchData(); // 초기 호출
+  
+    const interval = setInterval(fetchData, 5000); // 5초마다 호출
+    return () => clearInterval(interval); // 언마운트 시 클리어
   }, [id, featureConfig]);
-
-
-  // Fetch recordData when id changes
-  useEffect(() => {
-  if (!id) return;
-
-  api.get(`/api/pemfc/${id}/record/recent600`)
-    .then(response => {
-      const json = response.data;
-      if (Array.isArray(json)) {
-        setRecordData(json.reverse());
-        console.log(`최근 레코드 데이터 호출 성공: /api/pemfc/${id}/record/recent600`);
-      } else {
-        console.warn("최근 레코드 데이터 형식이 예상과 다름:", json);
-      }
-    })
-    .catch(error => {
-      console.error("최근 레코드 데이터 호출 실패:", error);
-    });
-}, [id]);
-
+  
   useEffect(() => {
     if (!containerRef.current || recordData.length === 0 || maskData.length === 0) {
       return;
