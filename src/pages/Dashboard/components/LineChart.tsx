@@ -182,7 +182,11 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
     const axisArea = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
     // Scales
-    const totalLength = data.length + (predictionData?.length || 0);
+    //t_3의 경우에는 오른쪽 scale을 조금 더 확장
+    const predictionLength = predictionData?.length || 0;
+    const predictionXLength = selectedGroup === "t_3" ? predictionLength * 5 : predictionLength;
+    const totalLength = data.length + predictionXLength;
+
     const xBase = d3.scaleLinear().domain([0, totalLength - 1]).range([0, width]);
     const x = transform.rescaleX(xBase);
 
@@ -271,14 +275,21 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
   const predLineData = [actualValues[actualValues.length - 1], ...predictionData.map(d => d.predictedValue)];
 
   // 선 생성기 타입은 number로
+  // temperature의 경우 예측값 line을 가로로 5배 늘려야 함
   const predLine = d3.line<number>()
-    .x((_, i) => x(predStart + i))
+    .x((_, i) => x(predStart + i * (selectedGroup === "t_3" ? 5 : 1)))
     .y(d => y(d));
 
   // 예측 상태 배경선 (x 인덱스 +1 부터 시작)
+  //t_3의 경우, 예측상태 배경선 간격을 5로 설정
+  const gap = selectedGroup === "t_3" ? 5 : 1;
+
   chartArea
     .selectAll("line.pred-state")
-    .data(predictionData.map((d, i) => ({ index: predStart + 1 + i, state: d.state })))
+      .data(predictionData.map((d, i) => ({
+    index: predStart + gap + i * gap,
+    state: d.state
+  })))
     .join("line")
     .attr("x1", (d) => x(d.index))
     .attr("x2", (d) => x(d.index))
