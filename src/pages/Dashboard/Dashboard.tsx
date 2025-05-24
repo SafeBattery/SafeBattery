@@ -113,28 +113,7 @@ function Dashboard() {
   }
 };
  
-  // 모델 상태
-  useEffect(() => {
-  if (!id) return;
 
-  api
-    .get(`/api/pemfc/${id}`)
-    .then(response => {
-      const { modelName, powerState, voltageState, temperatureState } = response.data;
-      console.log('모델 이름 및 상태 API 호출 성공:', response.data);
-
-      setModelName(modelName);
-      setLatestStates(prev => ({
-        ...prev,
-        powerState,
-        voltageState,
-        temperatureState,
-      }));
-    })
-    .catch(error => {
-      console.error("모델 이름 및 상태 API 호출 실패:", error);
-    });
-}, [id]);
 
   // 시간 업데이트
   useEffect(() => {
@@ -142,59 +121,50 @@ function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // 최근 센서 데이터 API 호출
-  // useEffect(() => {
-  //   if (!id) return;
-
-  //   api.get(`/api/pemfc/${id}/record/recent600`)
-  //     .then(response => {
-  //       console.log(`최근 센서 데이터 API 호출 성공!: /api/pemfc/${id}/record/recent600`);
-
-  //       const data = response.data;
-  //       if (Array.isArray(data) && data.length > 0) {
-  //         const last = data[0];
-
-  //         setLatestValues({
-  //           pw: last.pw,
-  //           u_totV: last.u_totV,
-  //           t_3: last.t_3,
-  //           powerState: last.powerState,
-  //           voltageState: last.voltageState,
-  //           temperatureState: last.temperatureState
-  //         });
-  //       }
-  //     })
-  //     .catch(error => {
-  //       console.error("최근 센서 데이터 API 호출 실패:", error);
-  //     });
-  // }, [id]);
+  //pemfc, 최신 센서데이터를 같이 fetch해서 저장
   useEffect(() => {
     if (!id) return;
   
-    const fetchLatest = () => {
-      api.get(`/api/pemfc/${id}/record/recent600`)
-        .then(response => {
-          console.log(`최근 센서 데이터 API 호출 성공!: /api/pemfc/${id}/record/recent600`);
-          const data = response.data;
-          if (Array.isArray(data) && data.length > 0) {
-            const last = data[0]; //ok
-            setLatestValues({
-              pw: last.pw,
-              u_totV: last.u_totV,
-              t_3: last.t_3,
-            });
-          }
-        })
-        .catch(error => {
-          console.error("최근 센서 데이터 API 호출 실패:", error);
-        });
+    const fetchModelAndLatest = async () => {
+      try {
+        const [modelRes, latestRes] = await Promise.all([
+          api.get(`/api/pemfc/${id}`),
+          api.get(`/api/pemfc/${id}/record/recent600`)
+        ]);
+  
+        // 모델 정보 처리
+        const { modelName, powerState, voltageState, temperatureState } = modelRes.data;
+        console.log('모델 이름 및 상태 API 호출 성공:', modelRes.data);
+        setModelName(modelName);
+        setLatestStates(prev => ({
+          ...prev,
+          powerState,
+          voltageState,
+          temperatureState,
+        }));
+  
+        // 센서 정보 처리
+        const data = latestRes.data;
+        console.log(`최근 센서 데이터 API 호출 성공!: /api/pemfc/${id}/record/recent600`);
+        if (Array.isArray(data) && data.length > 0) {
+          const last = data[0];
+          setLatestValues({
+            pw: last.pw,
+            u_totV: last.u_totV,
+            t_3: last.t_3,
+          });
+        }
+      } catch (error) {
+        console.error("모델 또는 센서 데이터 API 호출 실패:", error);
+      }
     };
   
-    fetchLatest(); 
-    const intervalId = setInterval(fetchLatest, 5000); 
+    fetchModelAndLatest();
+    const intervalId = setInterval(fetchModelAndLatest, 5000);
   
-    return () => clearInterval(intervalId); 
+    return () => clearInterval(intervalId);
   }, [id]);
+  
   
 
   const [selectedFeatures, setSelectedFeatures] = React.useState<string[]>([]);

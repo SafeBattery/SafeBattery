@@ -158,6 +158,7 @@
 .card.rank {
   display: flex;
   flex-direction: column;
+  height: 400px;
   padding: 16px 24px;
   flex: 0 1 598px;  
   max-width: 598px; 
