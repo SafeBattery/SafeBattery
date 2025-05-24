@@ -253,11 +253,11 @@ function Dashboard() {
           <div className={`${styles.card} ${styles.power}`}>
 
             <div className={styles.cardHeader}>
-              <div className={styles.cardTitle}>전력</div>
+              <div className={styles.cardTitle}>출력 전력 (PW)</div>
             </div>
             <div className={styles.cardContent}>
               <div className={styles.powerStateWrapper}>
-                <span className={styles.simptipPositionTop} data-tooltip="초록: 정상(0.6 ~ 0.9), 노랑: 경고, 빨강: 위험">
+                <span className={styles.simptipPositionTop} data-tooltip="초록: 정상, 노랑: 경고, 빨강: 위험">
                   <div
                     className={styles.powerState}
                     style={{
@@ -282,10 +282,10 @@ function Dashboard() {
           {/* {u_totV 카드} */}
           <div className={`${styles.card} ${styles.voltage}`}>
             <div className={styles.cardHeader}>
-              <div className={styles.cardTitle}>전압</div>
+              <div className={styles.cardTitle}>스택 전체 전압 (U_totV)</div>
             </div>
             <div className={styles.cardContent}>
-              <span className={styles.simptipPositionTop} data-tooltip="초록: 정상(0.6 ~ 0.9), 노랑: 경고, 빨강: 위험">
+              <span className={styles.simptipPositionTop} data-tooltip="초록: 정상 / 노랑: 경고 / 빨강: 위험">
                   <div
                     className={styles.voltageState}
                     style={{
@@ -308,10 +308,10 @@ function Dashboard() {
           {/* {t_3} */}
           <div className={`${styles.card} ${styles.temperature}`}>
             <div className={styles.cardHeader}>
-              <div className={styles.cardTitle}>온도</div>
+              <div className={styles.cardTitle}>스택 내부 온도 (T_3)</div>
             </div>
             <div className={styles.cardContent}>
-              <span className={styles.simptipPositionTop} data-tooltip="초록: 정상(0.6 ~ 0.9), 노랑: 경고, 빨강: 위험">
+              <span className={styles.simptipPositionTop} data-tooltip="초록: 정상, 노랑: 경고, 빨강: 위험">
                   <div
                     className={styles.temperatureState}
                     style={{

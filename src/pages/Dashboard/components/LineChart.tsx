@@ -393,7 +393,7 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
   return (
     <div
       className={styles.lineChartContainer}
-      style={{ position: "relative", width: "100%", height: "30%" }}
+      style={{ position: "relative", width: "100%", height: "375px" }}
       ref={containerRef}
     >
       <svg ref={svgRef} style={{ display: "block", width: "100%", height: "100%" }} />

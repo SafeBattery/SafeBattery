@@ -141,7 +141,7 @@
   gap: 24px;
   justify-content: space-between;
   flex-wrap: nowrap;
-  min-height: 465px;
+  min-height: 550px;
 }
 .cardSection.history .card.trend {
   flex: 0 1 calc((100vw - 72px) * 0.5) !important;
@@ -255,7 +255,7 @@
   flex: 0 1 100%;
   max-width: 100%;
   min-width: 0;
-  height: 50%;
+  height: 100%;
 }
 .dynamask .impactChartContainer {
   flex: 0 1 100%;
@@ -311,7 +311,7 @@
   position: relative;
   overflow-y: auto;
   max-height: 400px;
-  overflow-y: auto;
+
 }
 
 .dynamaskModalActions, .trendModalActions{
@@ -407,7 +407,7 @@ dynamaskModal .cardTitle,  trendModal .cardTitle{
   content: attr(data-tooltip);
   background-color: #323232;
   color: #ecf0f1;
-  height: 36px; /* 높이 늘림 */
+  height: 30px; /* 높이 늘림 */
   padding: 10px 8px; /* 수직 여백 증가, 좌우 여백 축소 */
   font-size: 13px;
   line-height: 18px;

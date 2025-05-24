@@ -219,12 +219,19 @@ function LineCharts({ selectedGroup }: LineChartsProps) {
         .attr("d", line);
 
       // axes
+
       svg.append("g")
         .attr("class", "x-axis")
         .attr("transform", `translate(0,${height})`)
-        .call(d3.axisBottom(xScale).ticks(6));
-      svg.append("g")
-        .call(d3.axisLeft(yScale).ticks(3));
+        .call(
+          d3.axisBottom(xScale)
+            .ticks(6)
+            .tickFormat((d) => {
+              const label = Number(d) - (recordData.length);
+              if (label === 600) return "현재";  // 0이 현재니까
+              return label.toString();           // 나머지는 그대로 표시
+            })
+        );
 
       // label
       svg.append("text")
@@ -252,7 +259,16 @@ function LineCharts({ selectedGroup }: LineChartsProps) {
 
           // (A) x축
           content.select<SVGGElement>(".x-axis")
-            .call(d3.axisBottom(newX).ticks(6).tickSize(-height).tickPadding(8))
+            .call(
+              d3.axisBottom(newX)
+                .ticks(6)
+                .tickSize(-height)
+                .tickPadding(8)
+                .tickFormat((d) => {
+                  const label = Number(d) - (recordData.length) ;
+                  return label === 1 ? "현재" : label.toString();
+                })
+            )
             .selectAll("line").attr("stroke", "#ddd");
 
           // (B) mask rect

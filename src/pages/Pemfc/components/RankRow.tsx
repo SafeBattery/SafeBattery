@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import React from "react";
+import {  useEffect, useState } from "react";
 import api from "../../../api/axiosInstance";
 import styles from "../Pemfc.module.css";
 
@@ -46,16 +47,16 @@ const RankRow = ({ selectedGroup }: RankRowProps) => {
   useEffect(() => {
     const fetchRankData = async () => {
       const endpoint = getEndpoint(selectedGroup);
-
+  
       try {
         setLoading(true);
         setError(null);
-
+  
         const response = await api.get<RankDataItem[]>(`/api/rank/${endpoint}`);
         const top3 = response.data
           .sort((a, b) => b.errorRate - a.errorRate)
           .slice(0, 3);
-
+  
         setRankData(top3);
         console.log(`데이터 가져오기 성공: /api/rank/${endpoint}`);
       } catch (err) {
@@ -66,9 +67,15 @@ const RankRow = ({ selectedGroup }: RankRowProps) => {
         setLoading(false);
       }
     };
-
+  
+    // 처음 실행
     fetchRankData();
+    // 5초마다 실행
+    const interval = setInterval(fetchRankData, 5000);
+    // cleanup
+    return () => clearInterval(interval);
   }, [selectedGroup]);
+  
 
   if (loading) return <p>로딩 중...</p>;
   if (error) return <p>{error}</p>;

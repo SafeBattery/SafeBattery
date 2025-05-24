@@ -112,23 +112,40 @@ const Pemfc = () => {
     setDangerCount(pemfcData.filter((item) => item.state === 'ERROR').length);
   }, [pemfcData]);
 
-  // leaflet 지도 초기화 - O
+  // leaflet 지도 초기화
   useEffect(() => {
-    if (mapRef.current && mapRef.current.childElementCount === 0) {
-      const initialZoom = 6;
+  if (!mapRef.current || mapRef.current.childElementCount > 0) return;
+  if (pemfcData.length === 0) return;
 
-      const map = L.map(mapRef.current, {
-        zoom: initialZoom,
-        minZoom: initialZoom, 
-        scrollWheelZoom: true,
-      }).setView([36.6354, 127.8375], 6);
+  // clientId === 1인 PEMFC 중 첫 번째 항목
+  const lastClientRecord = pemfcData.filter(item => item.clientId === 1).at(0);
+  if (!lastClientRecord) return;
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-      }).addTo(map);
-      setLeafletMap(map);
-    }
-  }, []);
+  const lat =
+    typeof lastClientRecord.lat === 'string'
+      ? parseFloat(lastClientRecord.lat)
+      : lastClientRecord.lat;
+
+  const lng =
+    typeof lastClientRecord.lng === 'string'
+      ? parseFloat(lastClientRecord.lng)
+      : lastClientRecord.lng;
+
+  const map = L.map(mapRef.current, {
+    zoom: 15,
+    minZoom: 5,
+    maxZoom: 20,
+    scrollWheelZoom: true,
+    zoomControl: true,
+  }).setView([lat, lng]);
+
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+  }).addTo(map);
+
+  setLeafletMap(map);
+}, [pemfcData]);
 
   // pemfcData가 변경될 때 지도 마커 초기화 후 재렌더링
   useEffect(() => {
@@ -156,7 +173,6 @@ const Pemfc = () => {
         const marker = L.marker([lat, lng], { icon: customIcon })
           .addTo(leafletMap)
           .bindPopup(`${clientName}`)
-          .openPopup();
         newMarkers.push(marker);
       }
     });
