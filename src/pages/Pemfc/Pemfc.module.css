@@ -161,6 +161,7 @@
   padding: 16px 24px;
   flex: 0 1 598px;  
   max-width: 598px; 
+  height: 300px;
   box-sizing: border-box;
 }
 .cardHeader {

@@ -70,58 +70,50 @@ export default function LineChart({ selectedGroup }: LineChartProps) {
     return () => ro.disconnect();
   }, []);
 
-  // Fetch recent record data
-  useEffect(() => {
-  if (!id) return;
-  setData(null);
-
-  api
-    .get(`/api/pemfc/${id}/record/recent600`)
-    .then((response) => {
-      const arr = response.data;
-      if (Array.isArray(arr)) {
-        setData(arr.reverse());
-        console.log(`최근 600개 레코드 데이터 호출 성공!: http://ec2-3-39-41-151.ap-northeast-2.compute.amazonaws.com:8080/api/pemfc/${id}/record/recent600`);
-      } else {
-        console.warn("응답이 배열이 아님:", arr);
-      }
-    })
-    .catch((error) => {
-      console.error("최근 레코드 데이터 호출 실패:", error);
-    });
-}, [id]);
-
-  // Fetch prediction data
-  useEffect(() => {
-  if (!id) return;
-
-  const endpoint1 = predictionApiMap1[selectedGroup];
-  const endpoint2 = predictionApiMap2[selectedGroup];
-
-  setPredictionData(null);
-
-  api
-    .get(`/api/pemfc/${id}/predictions/${endpoint1}/${endpoint2}`)
-    .then((response) => {
-      const arr = response.data;
-      if (Array.isArray(arr)) {
-        const processed = arr
-          .slice()        // 원본 배열 유지
-          .reverse()      // 역순으로 정렬
+  // Fetch recent record, prediction data
+  const fetchAllData = useCallback(() => {
+    if (!id) return;
+  
+    const recordRequest = api.get(`/api/pemfc/${id}/record/recent600`);
+    const endpoint1 = predictionApiMap1[selectedGroup];
+    const endpoint2 = predictionApiMap2[selectedGroup];
+    const predictionRequest = api.get(`/api/pemfc/${id}/predictions/${endpoint1}/${endpoint2}`);
+  
+    Promise.all([recordRequest, predictionRequest])
+      .then(([recordRes, predictionRes]) => {
+        // 실측 데이터 처리
+        const recordArr = recordRes.data;
+        if (Array.isArray(recordArr)) {
+          setData(recordArr.reverse());
+          console.log(`(그래프) 최근 600개 레코드 데이터 호출 성공`);
+        } else {
+          console.warn("레코드 응답이 배열이 아님:", recordArr);
+        }
+  
+        // 예측 데이터 처리
+        const predictionArr = predictionRes.data;
+        if (Array.isArray(predictionArr)) {
+          const processed = predictionArr.reverse()
           .map((d: any) => ({
             predictedValue: +d.predictedValue,
             state: d.state,
           }));
-        setPredictionData(processed);
-        console.log(`예측 데이터 호출 성공!: /api/pemfc/${id}/predictions/${endpoint1}/${endpoint2}`);
-      } else {
-        console.warn("예측 데이터 응답이 배열이 아님:", arr);
-      }
-    })
-    .catch((error) => {
-      console.error("예측 데이터 호출 실패:", error);
-    });
-}, [id, selectedGroup]);
+          setPredictionData(processed);
+          console.log(`예측 데이터 호출 성공!: /api/pemfc/${id}/predictions/${endpoint1}/${endpoint2}`);
+        } else {
+          console.warn("예측 응답이 배열이 아님:", predictionArr);
+        }
+      })
+      .catch((error) => {
+        console.error("데이터 병렬 호출 실패:", error);
+      });
+  }, [id, selectedGroup]);
+
+  useEffect(() => {
+    fetchAllData(); // 최초 호출
+    const interval = setInterval(fetchAllData, 5000); // 5초마다
+    return () => clearInterval(interval);
+  }, [fetchAllData]);
 
   // Zoom behavior setup
   useEffect(() => {

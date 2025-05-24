@@ -136,28 +136,33 @@ function Dashboard() {
   // 최근 센서 데이터 API 호출
   useEffect(() => {
     if (!id) return;
-
-    api.get(`/api/pemfc/${id}/record/recent600`)
-      .then(response => {
-        console.log(`최근 센서 데이터 API 호출 성공!: /api/pemfc/${id}/record/recent600`);
-
-        const data = response.data;
-        if (Array.isArray(data) && data.length > 0) {
-          const last = data[0];
-
-          setLatestValues({
-            pw: last.pw,
-            u_totV: last.u_totV,
-            t_3: last.t_3,
-            powerState: last.powerState,
-            voltageState: last.voltageState,
-            temperatureState: last.temperatureState
-          });
-        }
-      })
-      .catch(error => {
-        console.error("최근 센서 데이터 API 호출 실패:", error);
-      });
+  
+    const fetchLatest = () => {
+      api.get(`/api/pemfc/${id}/record/recent600`)
+        .then(response => {
+          console.log(`최근 센서 데이터 API 호출 성공!: /api/pemfc/${id}/record/recent600`);
+          const data = response.data;
+          if (Array.isArray(data) && data.length > 0) {
+            const last = data[0];
+            setLatestValues({
+              pw: last.pw,
+              u_totV: last.u_totV,
+              t_3: last.t_3,
+              powerState: last.powerState,
+              voltageState: last.voltageState,
+              temperatureState: last.temperatureState
+            });
+          }
+        })
+        .catch(error => {
+          console.error("최근 센서 데이터 API 호출 실패:", error);
+        });
+    };
+  
+    fetchLatest(); // 초기 1회 호출
+    const intervalId = setInterval(fetchLatest, 5000); // 5초마다 반복
+  
+    return () => clearInterval(intervalId); // 언마운트 시 정리
   }, [id]);
 
   const [selectedFeatures, setSelectedFeatures] = React.useState<string[]>([]);

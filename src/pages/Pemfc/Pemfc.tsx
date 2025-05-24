@@ -49,42 +49,46 @@ const Pemfc = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
 
-  // API 데이터 불러오기 (마운트 시 한 번 실행)
+  // API 데이터 불러오기
   useEffect(() => {
-  const fetchPemfcData = async () => {
-    try {
-      const response = await api.get(
-        '/api/client/1/pemfc/all'
-      );
-
-      const rawData = response.data;
-      console.log('PEMFC API 데이터 가져오기 성공! : /api/client/1/pemfc/all'); 
-
-      const processedData: PemfcInstance[] = rawData.map((item: any) => {
-        const state = determineState(item.powerState, item.voltageState, item.temperatureState);
-
-        return {
-          id: item.id,
-          clientId: item.clientId,
-          modelName: item.modelName,
-          manufacturedDate: item.manufacturedDate,
-          lat: item.lat,
-          lng: item.lng,
-          powerState: item.powerState,
-          voltageState: item.voltageState,
-          temperatureState: item.temperatureState,
-          state: state,
-        };
-      });
-
-      setPemfcData(processedData);
-    } catch (error) {
-      console.error('PEMFC API 데이터 가져오기 실패:', error);
-    }
-  };
-
-  fetchPemfcData(); 
-}, []);
+    const fetchPemfcData = async () => {
+      try {
+        const response = await api.get('/api/client/1/pemfc/all');
+        console.log('PEMFC API 데이터 가져오기 성공! : /api/client/1/pemfc/all'); 
+  
+        const rawData = response.data;
+  
+        const processedData: PemfcInstance[] = rawData.map((item: any) => {
+          const state = determineState(item.powerState, item.voltageState, item.temperatureState);
+  
+          return {
+            id: item.id,
+            clientId: item.clientId,
+            modelName: item.modelName,
+            manufacturedDate: item.manufacturedDate,
+            lat: item.lat,
+            lng: item.lng,
+            powerState: item.powerState,
+            voltageState: item.voltageState,
+            temperatureState: item.temperatureState,
+            state: state,
+          };
+        });
+  
+        setPemfcData(processedData);
+      } catch (error) {
+        console.error('PEMFC API 데이터 가져오기 실패:', error);
+      }
+    };
+  
+    // 최초 1회 실행
+    fetchPemfcData();
+    // 5초마다 fetch 실행
+    const interval = setInterval(fetchPemfcData, 5000);
+    // 컴포넌트 언마운트 시 인터벌 정리
+    return () => clearInterval(interval);
+  }, []);
+  
 
 
   useEffect(() => {
